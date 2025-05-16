@@ -965,9 +965,7 @@
 0.0.0.0 fastly-insights.com
 0.0.0.0 faves.grow.me
 0.0.0.0 favicon.yandex.net
-0.0.0.0 favicons.nextdns.io
-0.0.0.0 fb.content-loader.com
-0.0.0.0 fb.html-load.com
+0.0.0.0 favicons.nextdns.io
 0.0.0.0 fd.api.iris.microsoft.com
 0.0.0.0 fe.sitedataprocessing.com
 0.0.0.0 featureassets.org
@@ -1066,9 +1064,7 @@
 0.0.0.0 googleusercontent.com
 0.0.0.0 gos-api.gos-gsp.io
 0.0.0.0 go-updater.brave.com
-0.0.0.0 graph.accountkit.com
-0.0.0.0 graph.facebook.com
-0.0.0.0 graph.instagram.com
+0.0.0.0 graph.accountkit.com
 0.0.0.0 graph.microsoft.com
 0.0.0.0 gravatar.com
 0.0.0.0 grow.gab.com
