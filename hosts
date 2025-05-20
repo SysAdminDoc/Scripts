@@ -1,3 +1,4 @@
+# Blocklist for telemetry, ads, and tracking
 0.0.0.0 0.datadog.pool.ntp.org
 0.0.0.0 0.gravatar.com
 0.0.0.0 05efe2edfc6098a8dc4a449c8698ed640b837b5f.ipv4.cws.conviva.com
@@ -41,6 +42,7 @@
 0.0.0.0 a.kym-cdn.com
 0.0.0.0 a.magsrv.com
 0.0.0.0 a.nel.cloudflare.com
+0.0.0.0 a.omappapi.com
 0.0.0.0 a.orbsrv.com
 0.0.0.0 a.pub.network
 0.0.0.0 a.publir.com
@@ -156,6 +158,7 @@
 0.0.0.0 ads1.msn.com
 0.0.0.0 adsafeprotected.com
 0.0.0.0 ads-api.x.com
+0.0.0.0 adsassets.waze.com
 0.0.0.0 adscale.de
 0.0.0.0 adsco.re
 0.0.0.0 adscok.com
@@ -258,6 +261,7 @@
 0.0.0.0 analytics.yahoo.com
 0.0.0.0 analytics-api-s.cloudinary.com
 0.0.0.0 analytics-events.inshorts.com
+0.0.0.0 analytics-server.gimbal.com
 0.0.0.0 analytics-tcp.mintegral.net
 0.0.0.0 analytics-tcp.mtgglobals.com
 0.0.0.0 android.apis.google.com
@@ -311,11 +315,13 @@
 0.0.0.0 api64.ipify.org
 0.0.0.0 api-engage-us.sitecorecloud.io
 0.0.0.0 api-esp.piano.io
+0.0.0.0 api-fp-retry-bj.fengkongcloud.com
 0.0.0.0 api-global.netflix.com
 0.0.0.0 apigtwb2c.us.dell.com
 0.0.0.0 api-js.mixpanel.com
 0.0.0.0 api-main-us-east.velaro.com
 0.0.0.0 api-na1.hubspot.com
+0.0.0.0 apmplus.volces.com
 0.0.0.0 app.adjust.com
 0.0.0.0 app.adjust.net.in
 0.0.0.0 app.adjust.world
@@ -344,6 +350,7 @@
 0.0.0.0 appsflyersdk.com
 0.0.0.0 appsforoffice.microsoft.com
 0.0.0.0 appsgrowthpromo-pa.clients6.google.com
+0.0.0.0 appsitemsuggest-pa.googleapis.com
 0.0.0.0 app-sj11.marketo.com
 0.0.0.0 app-sj28.marketo.com
 0.0.0.0 app-static.turtl.co
@@ -358,6 +365,7 @@
 0.0.0.0 asset.b3mxnuvcer.com
 0.0.0.0 asset.fwcdn3.com
 0.0.0.0 assets.adobedtm.com
+0.0.0.0 assets.alicdn.com
 0.0.0.0 assets.armanet.us
 0.0.0.0 assets.asurion-ui.my.asurion53.com
 0.0.0.0 assets.churnkey.co
@@ -415,6 +423,8 @@
 0.0.0.0 bf02454vkj.bf.dynatrace.com
 0.0.0.0 bf37511qjh.bf.dynatrace.com
 0.0.0.0 bf40164ces.bf.dynatrace.com
+0.0.0.0 bf52759oue.bf.dynatrace.com
+0.0.0.0 b-graph.facebook.com
 0.0.0.0 bibo.api.swiftkey.com
 0.0.0.0 bid.underdog.media
 0.0.0.0 biddingowl.agilecrm.com
@@ -516,6 +526,7 @@
 0.0.0.0 cdn.convertbox.com
 0.0.0.0 cdn.cookielaw.org
 0.0.0.0 cdn.cquotient.com
+0.0.0.0 cdn.doubleverify.com
 0.0.0.0 cdn.dropboxexperiment.com
 0.0.0.0 cdn.dynamicyield.com
 0.0.0.0 cdn.ebizio.com
@@ -697,6 +708,7 @@
 0.0.0.0 collector-pxhyx10rg3.px-cloud.net
 0.0.0.0 collector-pxu6b0qd2s.px-cloud.net
 0.0.0.0 collector-pxxor1k5b6.px-cloud.net
+0.0.0.0 combine.urbanairship.com
 0.0.0.0 comet.yahoo.com
 0.0.0.0 commerceops.tryzens-analytics.com
 0.0.0.0 compiledonatevanity.com
@@ -754,6 +766,7 @@
 0.0.0.0 criteo.net
 0.0.0.0 crs.cr.adobe.com
 0.0.0.0 crwdcntrl.net
+0.0.0.0 cs.dds.microsoft.com
 0.0.0.0 cs.zg-api.com
 0.0.0.0 cse.google.com
 0.0.0.0 csi.gstatic.com
@@ -965,7 +978,7 @@
 0.0.0.0 fastly-insights.com
 0.0.0.0 faves.grow.me
 0.0.0.0 favicon.yandex.net
-0.0.0.0 favicons.nextdns.io
+0.0.0.0 favicons.nextdns.io
 0.0.0.0 fd.api.iris.microsoft.com
 0.0.0.0 fe.sitedataprocessing.com
 0.0.0.0 featureassets.org
@@ -975,6 +988,7 @@
 0.0.0.0 feedback.windows.com
 0.0.0.0 feedback-pa.clients6.google.com
 0.0.0.0 feedback-pa.googleapis.com
+0.0.0.0 feedbackws.icloud.com
 0.0.0.0 file.garden
 0.0.0.0 files.adbrite.com
 0.0.0.0 firebase.googleapis.com
@@ -999,6 +1013,7 @@
 0.0.0.0 forms-na1.hsforms.com
 0.0.0.0 foxkit.fox.com
 0.0.0.0 fp.msedge.net
+0.0.0.0 fp-it.fengkongcloud.com
 0.0.0.0 fpt.live.com
 0.0.0.0 free.timeanddate.com
 0.0.0.0 frenghiacred.com
@@ -1024,6 +1039,7 @@
 0.0.0.0 ganalyticshub.net
 0.0.0.0 gate.hockeyapp.net
 0.0.0.0 gateway.instagram.com
+0.0.0.0 gator.volces.com
 0.0.0.0 gc.zgo.at
 0.0.0.0 gdsapi.cnbc.com
 0.0.0.0 geller-pa.googleapis.com
@@ -1042,6 +1058,7 @@
 0.0.0.0 get.s-onetag.com
 0.0.0.0 getclicky.com
 0.0.0.0 gfe.nvidia.com
+0.0.0.0 ghent-gce-sc.bidswitch.net
 0.0.0.0 giphy.com
 0.0.0.0 glitter.services.disqus.com
 0.0.0.0 global.ketchcdn.com
@@ -1064,7 +1081,9 @@
 0.0.0.0 googleusercontent.com
 0.0.0.0 gos-api.gos-gsp.io
 0.0.0.0 go-updater.brave.com
-0.0.0.0 graph.accountkit.com
+0.0.0.0 graph.accountkit.com
+0.0.0.0 graph.fbpigeon.com
+0.0.0.0 graph.instagram.com
 0.0.0.0 graph.microsoft.com
 0.0.0.0 gravatar.com
 0.0.0.0 grow.gab.com
@@ -1099,6 +1118,7 @@
 0.0.0.0 hubspot-c-fallback.ably-realtime.com
 0.0.0.0 hubspot-d-fallback.ably-realtime.com
 0.0.0.0 hubspot-e-fallback.ably-realtime.com
+0.0.0.0 hubspot-forms-static-embed.s3.amazonaws.com
 0.0.0.0 hubspot-rest.ably.io
 0.0.0.0 hulu.hb.omtrdc.net
 0.0.0.0 i.armanet.us
@@ -1286,6 +1306,7 @@
 0.0.0.0 log.pinterest.com
 0.0.0.0 log16-normal-useast5.tiktokv.us
 0.0.0.0 log-boot.tiktokv.com
+0.0.0.0 logevt.pubfinity.com
 0.0.0.0 logging.api.intuit.com
 0.0.0.0 logging.g.sst.secureserver.net
 0.0.0.0 loggly.com
@@ -1363,6 +1384,7 @@
 0.0.0.0 ml314.com
 0.0.0.0 moat.com
 0.0.0.0 moatads.com
+0.0.0.0 mobile.eum-appdynamics.com
 0.0.0.0 mobile.events.data.microsoft.com
 0.0.0.0 mobile.pipe.aria.microsoft.com
 0.0.0.0 mobileanalytics.us-east-1.amazonaws.com
@@ -1388,6 +1410,7 @@
 0.0.0.0 mps.cnbc.com
 0.0.0.0 mpsnare.iesnare.com
 0.0.0.0 mq.gw.tuyaus.com
+0.0.0.0 mqtt-mini.facebook.com
 0.0.0.0 mr0.imageadvantage.net
 0.0.0.0 mrodevicemgr.officeapps.live.com
 0.0.0.0 ms.applovin.com
@@ -1598,6 +1621,7 @@
 0.0.0.0 player.h-cdn.com
 0.0.0.0 players.brightcove.net
 0.0.0.0 plista.com
+0.0.0.0 pn.ybp.yahoo.com
 0.0.0.0 po.st
 0.0.0.0 podcast.darknetdiaries.com
 0.0.0.0 podname.com
@@ -1719,6 +1743,7 @@
 0.0.0.0 resources.hltv.org
 0.0.0.0 resources.infolinks.com
 0.0.0.0 returnyoutubedislikeapi.com
+0.0.0.0 revanced.net
 0.0.0.0 revcontent.com
 0.0.0.0 rfihub.com
 0.0.0.0 rfncgi-cdn-settings.appsflyersdk.com
@@ -1751,6 +1776,8 @@
 0.0.0.0 rushinfo.adobe.com
 0.0.0.0 rutracker.org
 0.0.0.0 s.adroll.com
+0.0.0.0 s.ads.smartadserver.com
+0.0.0.0 s.alicdn.com
 0.0.0.0 s.amazon-adsystem.com
 0.0.0.0 s.click.aliexpress.com
 0.0.0.0 s.go-mpulse.net
@@ -1779,6 +1806,7 @@
 0.0.0.0 saservices.dell.com
 0.0.0.0 sb.monetate.net
 0.0.0.0 sb.scorecardresearch.com
+0.0.0.0 sc04.alicdn.com
 0.0.0.0 scar.unityads.unity3d.com
 0.0.0.0 scone-pa.googleapis.com
 0.0.0.0 scontent.webcollage.net
@@ -1826,6 +1854,7 @@
 0.0.0.0 secure.feed5baby.com
 0.0.0.0 secure.gravatar.com
 0.0.0.0 secure.nch.com.au
+0.0.0.0 secure.nice3aiea.com
 0.0.0.0 secure.quantserve.com
 0.0.0.0 secure.statcounter.com
 0.0.0.0 secure.trust-provider.com
@@ -1878,6 +1907,7 @@
 0.0.0.0 sibautomation.com
 0.0.0.0 sierra.kilo.ckapis.com
 0.0.0.0 signal.co
+0.0.0.0 simage4.pubmatic.com
 0.0.0.0 simpli.fi
 0.0.0.0 siteimproveanalytics.com
 0.0.0.0 sitescout.com
@@ -1906,6 +1936,7 @@
 0.0.0.0 solutions.invocacdn.com
 0.0.0.0 somni.rei.com
 0.0.0.0 sonar.viously.com
+0.0.0.0 sonar6.xy.fbcdn.net
 0.0.0.0 sonobi.com
 0.0.0.0 sovrn.com
 0.0.0.0 sp.analytics.yahoo.com
@@ -2005,6 +2036,7 @@
 0.0.0.0 sw.vaticpeacing.com
 0.0.0.0 swiftkey.com
 0.0.0.0 sync.cootlogix.com
+0.0.0.0 sync.resetdigital.co
 0.0.0.0 sync.search.spotxchange.com
 0.0.0.0 sync.sparteo.com
 0.0.0.0 sync.springserve.com
@@ -2073,6 +2105,7 @@
 0.0.0.0 theadex.com
 0.0.0.0 themediagrid.com
 0.0.0.0 thinfilm.com
+0.0.0.0 thm12.visa.com
 0.0.0.0 tiaacref.tt.omtrdc.net
 0.0.0.0 tigger-citadel.touchtype-fluency.com
 0.0.0.0 tiktok.adsmeasurement.com
@@ -2167,6 +2200,7 @@
 0.0.0.0 usc.adserver.snapads.com
 0.0.0.0 us-content.vergic.com
 0.0.0.0 use1-turn.fpjs.io
+0.0.0.0 us-east-sync.bidswitch.net
 0.0.0.0 userlocation.googleapis.com
 0.0.0.0 usermind.com
 0.0.0.0 userreport.com
@@ -2178,6 +2212,7 @@
 0.0.0.0 us-v10c.events.data.microsoft.com
 0.0.0.0 utt.impactcdn.com
 0.0.0.0 uxh52u-cdn-settings.appsflyersdk.com
+0.0.0.0 uxh52u-launches.appsflyersdk.com
 0.0.0.0 v.firebog.net
 0.0.0.0 v10.events.data.microsoft.com
 0.0.0.0 v10.vortex-win.data.microsoft.com
