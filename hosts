@@ -445,7 +445,6 @@
 0.0.0.0 mobileanalytics.us-east-1.amazonaws.com
 0.0.0.0 msh.amazon.com
 0.0.0.0 porkbun-media.s3-us-west-2.amazonaws.com
-0.0.0.0 reddit-image.s3.amazonaws.com
 0.0.0.0 s.amazon-adsystem.com
 0.0.0.0 s3.us-west.2-amazonaws.com
 0.0.0.0 s3-us-west-2.amazonaws.com
@@ -472,19 +471,13 @@
 0.0.0.0 gateway.instagram.com
 0.0.0.0 graph.accountkit.com
 0.0.0.0 graph.fbpigeon.com
-0.0.0.0 graph.instagram.com
-0.0.0.0 i.instagram.com
 0.0.0.0 i-fallback.instagram.com
-0.0.0.0 instagram.com
 0.0.0.0 lookaside.instagram.com
 0.0.0.0 mqtt-mini.facebook.com
 0.0.0.0 newsroom.fb.com
 0.0.0.0 payments-graph.facebook.com
 0.0.0.0 pixel.facebook.com
 0.0.0.0 sonar6.xy.fbcdn.net
-0.0.0.0 static.xx.fbcdn.net
-0.0.0.0 www.facebook.com
-0.0.0.0 www.instagram.com
 
 # === Apple ===
 # Domains related to Apple services, including iCloud, iTunes, App Store,
@@ -503,7 +496,6 @@
 0.0.0.0 ads-api.x.com
 0.0.0.0 analytics.twitter.com
 0.0.0.0 static.ads-twitter.com
-0.0.0.0 syndication.twitter.com
 0.0.0.0 ton.twimg.com
 
 # === Ad-Tech Platforms (Criteo, AppsFlyer, AppNexus, Rubicon, PubMatic, etc.) ===
@@ -1067,9 +1059,6 @@
 0.0.0.0 vk.com
 0.0.0.0 w3-reporting.reddit.com
 0.0.0.0 widgets.wp.com
-0.0.0.0 www.facebook.com
-0.0.0.0 www.instagram.com
-0.0.0.0 www.linkedin.com
 
 # === Mobile Platforms, App Development & Push Services ===
 # Domains related to mobile app development platforms, SDKs for mobile features,
@@ -1380,17 +1369,6 @@
 0.0.0.0 truste.com
 0.0.0.0 web.cmp.usercentrics.eu
 
-# === URL Shorteners, Link Trackers & Redirectors ===
-# Domains used for shortening URLs, which can also be used for click tracking and redirection.
-0.0.0.0 a.eunow4u.com
-0.0.0.0 bio.link
-0.0.0.0 cdn.bio.link
-0.0.0.0 go.reebr.com
-0.0.0.0 ingress.linktr.ee
-0.0.0.0 po.st
-0.0.0.0 s.click.aliexpress.com
-0.0.0.0 short.bitchute.com
-
 # === Miscellaneous Unwanted Services & Known Trackers ===
 # A catch-all for other types of unwanted services, specific known trackers,
 # or domains from the list that don't fit neatly into other categories but are
@@ -1678,7 +1656,6 @@
 0.0.0.0 geo.cnbc.com
 0.0.0.0 geo.query.yahoo.com
 0.0.0.0 gfe.nvidia.com
-0.0.0.0 giphy.com
 0.0.0.0 globalservices.conde.digital
 0.0.0.0 g.lifehacker.com
 0.0.0.0 g.mashable.com
@@ -1932,7 +1909,6 @@
 0.0.0.0 rts-static-prod.freshworksapi.com
 0.0.0.0 rutracker.org
 0.0.0.0 s.alicdn.com
-0.0.0.0 s.gravatar.com
 0.0.0.0 s.hoplon.pandora.com
 0.0.0.0 s.joinhoney.com
 0.0.0.0 s.nitropay.com
@@ -2038,11 +2014,6 @@
 0.0.0.0 thinfilm.com
 0.0.0.0 thm12.visa.com
 0.0.0.0 tiktok.adsmeasurement.com
-0.0.0.0 tiktok.com
-0.0.0.0 tnc16-normal-useast5.tiktokv.us
-0.0.0.0 tnc16-normal-useast8.tiktokv.us
-0.0.0.0 tnc19-normal-useast5.tiktokv.us
-0.0.0.0 tnc19-normal-useast8.tiktokv.us
 0.0.0.0 tns-counter.ru
 0.0.0.0 to.getnitropack.com
 0.0.0.0 top-fwz1.mail.ru
@@ -2111,10 +2082,7 @@
 0.0.0.0 www.datadoghq-browser-agent.com
 0.0.0.0 www.ea6c0ac4.xyz
 0.0.0.0 www.explorefreeresults.com
-0.0.0.0 www.extensions-hub.com
-0.0.0.0 www.gravatar.com
 0.0.0.0 www.hltv.org
-0.0.0.0 www.hubspot.com
 0.0.0.0 www.ieee.org
 0.0.0.0 www.intelliadmin.com
 0.0.0.0 www.ipqscdn.com
@@ -2129,8 +2097,6 @@
 0.0.0.0 www.picpick.org
 0.0.0.0 www.powr.io
 0.0.0.0 www.queryly.com
-0.0.0.0 www.realclearpolling.com
-0.0.0.0 www.redfin.com
 0.0.0.0 www.revouninstaller.com
 0.0.0.0 www.rsc.org
 0.0.0.0 www.sapien.com
@@ -2138,7 +2104,6 @@
 0.0.0.0 www.securitymetrics.com
 0.0.0.0 www.signwell.com
 0.0.0.0 www.spia-index.com
-0.0.0.0 www.startpage.com
 0.0.0.0 www.trvl-px.com
 0.0.0.0 www.uciservice.com
 0.0.0.0 www.ugdturner.com
