@@ -217,7 +217,6 @@
 0.0.0.0 www.msftconnecttest.com
 0.0.0.0 www.msn.com
 0.0.0.0 www.office.com
-
 # === Samsung ===
 # Includes domains related to Samsung devices, accounts, cloud services (Samsung Cloud),
 # app stores (Galaxy Store), Bixby, Tizen OS, Knox, and device management.
@@ -260,7 +259,6 @@
 0.0.0.0 www.samsungsds.com
 0.0.0.0 www.tizen.org
 0.0.0.0 wu2z-api.samsungcloud.com
-
 # === Adobe ===
 # Domains related to Adobe services, including Creative Cloud, Acrobat, Adobe Fonts (Typekit),
 # Adobe Analytics (Omniture), Adobe Dynamic Tag Management, and authentication.
@@ -294,7 +292,6 @@
 0.0.0.0 sp.auth.adobe.com
 0.0.0.0 sstats.adobe.com
 0.0.0.0 www.adobe.com
-
 # === Google / Alphabet ===
 # Domains related to Google services, including Search, Ads (AdSense, DoubleClick, AdMob),
 # Analytics, Firebase, Google Cloud (GCP), Android, YouTube, Gstatic (for static content),
@@ -370,7 +367,6 @@
 0.0.0.0 googleadservices.com
 0.0.0.0 google-analytics.com
 0.0.0.0 google-ohttp-relay-safeBrowse.fastly-edge.com
-0.0.0.0 google-ohttp-relay-safeBrowse.fastly-edge.com
 0.0.0.0 googlesyndication.com
 0.0.0.0 googletagmanager.com
 0.0.0.0 googletagservices.com
@@ -413,7 +409,6 @@
 0.0.0.0 www3.doubleclick.net
 0.0.0.0 www-google-analytics.l.google.com
 0.0.0.0 xgapromomanager-pa.googleapis.com
-
 # === Amazon ===
 # Domains related to Amazon services, including e-commerce, AWS, Amazon Advertising,
 # Twitch, Audible, IMDb, and other Amazon platforms.
@@ -458,7 +453,6 @@
 0.0.0.0 ws-na.amazon-adsystem.com
 0.0.0.0 www.assoc-amazon.com
 0.0.0.0 z-na.amazon-adsystem.com
-
 # === Facebook / Meta ===
 # Domains related to Facebook, Instagram, WhatsApp, Oculus, and other Meta platforms.
 # Includes social networking, advertising, tracking pixels, and Graph API endpoints.
@@ -478,7 +472,6 @@
 0.0.0.0 payments-graph.facebook.com
 0.0.0.0 pixel.facebook.com
 0.0.0.0 sonar6.xy.fbcdn.net
-
 # === Apple ===
 # Domains related to Apple services, including iCloud, iTunes, App Store,
 # device activation, updates, and analytics.
@@ -488,7 +481,6 @@
 0.0.0.0 metrics.icloud.com
 0.0.0.0 news.iadsdk.apple.com
 0.0.0.0 private-analytics.apple.com
-
 # === Twitter / X ===
 # Domains related to Twitter (now X) services, including its API, image hosting,
 # URL shortener, and advertising.
@@ -497,7 +489,6 @@
 0.0.0.0 analytics.twitter.com
 0.0.0.0 static.ads-twitter.com
 0.0.0.0 ton.twimg.com
-
 # === Ad-Tech Platforms (Criteo, AppsFlyer, AppNexus, Rubicon, PubMatic, etc.) ===
 # Domains from various third-party advertising technology companies,
 # mobile attribution platforms, and ad exchanges.
@@ -639,7 +630,6 @@
 0.0.0.0 websdk.appsflyer.com
 0.0.0.0 x.bidswitch.net
 0.0.0.0 z7tuxj-launches.appsflyersdk.com
-
 # === Analytics & Monitoring Platforms (Mixpanel, Amplitude, New Relic, Datadog, Sentry, etc.) ===
 # Platforms used for product analytics, application performance monitoring (APM),
 # error tracking, and user behavior analysis.
@@ -756,7 +746,6 @@
 0.0.0.0 dd.huggingface.co
 0.0.0.0 dellprod.analytics.org.coveo.com
 0.0.0.0 dev.visualwebsiteoptimizer.com
-0.0.0.0 dtm.adobe.com
 0.0.0.0 dynamicyield.com
 0.0.0.0 dynatrace.com
 0.0.0.0 e.crashlytics.com
@@ -827,7 +816,6 @@
 0.0.0.0 mc.yandex.com
 0.0.0.0 mc.yandex.ru
 0.0.0.0 metrics.coindesk.com
-0.0.0.0 metrics.icloud.com
 0.0.0.0 metrics.tacit.dk
 0.0.0.0 mixpanel.com
 0.0.0.0 mobile.eum-appdynamics.com
@@ -907,7 +895,6 @@
 0.0.0.0 sanalytics.disneyplus.com
 0.0.0.0 sb.monetate.net
 0.0.0.0 sb.scorecardresearch.com
-0.0.0.0 scorecardresearch.com
 0.0.0.0 scribe.logs.roku.com
 0.0.0.0 scripts.kissmetrics.io
 0.0.0.0 scripts.simpleanalyticscdn.com
@@ -917,7 +904,6 @@
 0.0.0.0 sentry.io
 0.0.0.0 sentry.odysee.tv
 0.0.0.0 se.monetate.net
-0.0.0.0 session.mshopbugsnag.irm.amazon.dev
 0.0.0.0 session-replay.browser-intake-datadoghq.com
 0.0.0.0 sessions.bugsnag.com
 0.0.0.0 settings.crashlytics.com
@@ -937,7 +923,6 @@
 0.0.0.0 sponge.creditkarma.com
 0.0.0.0 sr.studiostack.com
 0.0.0.0 sstatic1.histats.com
-0.0.0.0 sstats.adobe.com
 0.0.0.0 st.top100.ru
 0.0.0.0 static.chartbeat.com
 0.0.0.0 static.cloudflareinsights.com
@@ -1008,8 +993,6 @@
 0.0.0.0 webtrends.com
 0.0.0.0 webtrends.net
 0.0.0.0 woopra.com
-0.0.0.0 www.google-analytics.com
-0.0.0.0 www.googleoptimize.com
 0.0.0.0 www.statcounter.com
 0.0.0.0 www.surveycarrot.com
 0.0.0.0 xiti.com
@@ -1022,7 +1005,6 @@
 0.0.0.0 zn1gqrxzvrld7vjwm-upscx.siteintercept.qualtrics.com
 0.0.0.0 zn5igb7k7eucasg7c-avid.siteintercept.qualtrics.com
 0.0.0.0 znbd44gwlkhjwioqy-logmeinvoc.siteintercept.qualtrics.com
-
 # === Social Media Platforms, Widgets & Related Trackers ===
 # Domains associated with social media platforms, embedded widgets, share buttons,
 # and trackers used by these services.
@@ -1031,10 +1013,8 @@
 0.0.0.0 alb.reddit.com
 0.0.0.0 assets.pinterest.com
 0.0.0.0 cackle.me
-0.0.0.0 connect.facebook.net
 0.0.0.0 conversions-config.reddit.com
 0.0.0.0 disqus.com
-0.0.0.0 error-tracking.reddit.com
 0.0.0.0 glitter.services.disqus.com
 0.0.0.0 grow.gab.com
 0.0.0.0 i.kym-cdn.com
@@ -1059,19 +1039,9 @@
 0.0.0.0 vk.com
 0.0.0.0 w3-reporting.reddit.com
 0.0.0.0 widgets.wp.com
-
 # === Mobile Platforms, App Development & Push Services ===
 # Domains related to mobile app development platforms, SDKs for mobile features,
 # push notification services, and mobile attribution.
-0.0.0.0 3xzvhq-attr.appsflyersdk.com
-0.0.0.0 3xzvhq-cdn-settings.appsflyersdk.com
-0.0.0.0 3xzvhq-conversions.appsflyersdk.com
-0.0.0.0 3xzvhq-inapps.appsflyersdk.com
-0.0.0.0 5hxazv-cdn-settings.appsflyersdk.com
-0.0.0.0 5hxazv-launches.appsflyersdk.com
-0.0.0.0 6uke1j-cdn-settings.appsflyersdk.com
-0.0.0.0 6uke1j-launches.appsflyersdk.com
-0.0.0.0 7givd0-cdn-settings.appsflyersdk.com
 0.0.0.0 ae.iads.unity3d.com
 0.0.0.0 api.apptentive.com
 0.0.0.0 api.crashlytics.com
@@ -1079,52 +1049,22 @@
 0.0.0.0 api.revenuecat.com
 0.0.0.0 api2.branch.io
 0.0.0.0 app.link
-0.0.0.0 appsflyer.com
-0.0.0.0 appsflyersdk.com
 0.0.0.0 branch.io
-0.0.0.0 cdn.branch.io
 0.0.0.0 cdn.by.wonderpush.com
 0.0.0.0 cdn.iads.unity3d.com
 0.0.0.0 cdn.onesignal.com
 0.0.0.0 cdn2.inner-active.mobi
-0.0.0.0 clevertap.com
-0.0.0.0 clevertap-prod.com
 0.0.0.0 clientcdn.pushengage.com
 0.0.0.0 combine.urbanairship.com
 0.0.0.0 configv2.unityads.unity3d.com
-0.0.0.0 crashlytics.com
 0.0.0.0 device-api.urbanairship.com
-0.0.0.0 e.crashlytics.com
-0.0.0.0 engagements.appsflyer.com
-0.0.0.0 eu1.clevertap-prod.com
-0.0.0.0 eu1-spiky.clevertap-prod.com
 0.0.0.0 firebase-settings.crashlytics.com
 0.0.0.0 i-sdk.mediation.unity3d.com
-0.0.0.0 inapps.appsflyer.com
-0.0.0.0 launches.appsflyer.com
 0.0.0.0 mobile.yandexadexchange.net
-0.0.0.0 nzoejv-cdn-settings.appsflyersdk.com
-0.0.0.0 nzoejv-conversions.appsflyersdk.com
-0.0.0.0 oej9kw-inapps.appsflyersdk.com
 0.0.0.0 o-sdk.mediation.unity3d.com
 0.0.0.0 pushcrew.com
 0.0.0.0 push-sdk.com
-0.0.0.0 pvmx0j-cdn-settings.appsflyersdk.com
-0.0.0.0 q78jen-cdn-settings.appsflyersdk.com
-0.0.0.0 q78jen-conversions.appsflyersdk.com
-0.0.0.0 q78jen-dlsdk.appsflyersdk.com
 0.0.0.0 remote-data.urbanairship.com
-0.0.0.0 reqhfg-cdn-settings.appsflyersdk.com
-0.0.0.0 reqhfg-conversions.appsflyersdk.com
-0.0.0.0 reqhfg-gcdsdk.appsflyersdk.com
-0.0.0.0 reqhfg-inapps.appsflyersdk.com
-0.0.0.0 reqhfg-launches.appsflyersdk.com
-0.0.0.0 rfncgi-cdn-settings.appsflyersdk.com
-0.0.0.0 rfncgi-conversions.appsflyersdk.com
-0.0.0.0 rn79fn-attr.appsflyersdk.com
-0.0.0.0 rn79fn-cdn-settings.appsflyersdk.com
-0.0.0.0 rn79fn-conversions.appsflyersdk.com
-0.0.0.0 rn79fn-inapps.appsflyersdk.com
 0.0.0.0 scar.unityads.unity3d.com
 0.0.0.0 sdk.fra-01.braze.eu
 0.0.0.0 sdk.iad-01.braze.com
@@ -1137,16 +1077,10 @@
 0.0.0.0 sdk-info.gimbal.com
 0.0.0.0 sdk-monitoring.ogury.co
 0.0.0.0 sdktm.w.inmobi.com
-0.0.0.0 settings.crashlytics.com
 0.0.0.0 startup.mobile.yandex.net
-0.0.0.0 uxh52u-cdn-settings.appsflyersdk.com
-0.0.0.0 uxh52u-launches.appsflyersdk.com
 0.0.0.0 vela.iad-01.braze.com
-0.0.0.0 websdk.appsflyer.com
 0.0.0.0 ws.batch.com
 0.0.0.0 wsmetrics.batch.com
-0.0.0.0 z7tuxj-launches.appsflyersdk.com
-
 # === CDNs & Content Hosting (Primarily for Tracking/Ads/Unwanted Content) ===
 # Content Delivery Network domains or general content hosting that are often
 # used to serve tracking scripts, ad creatives, or other unwanted content.
@@ -1227,7 +1161,6 @@
 0.0.0.0 freyr.futurecdn.net
 0.0.0.0 geo-location-api.bc1.workers.dev
 0.0.0.0 i.armanet.us
-0.0.0.0 i.kym-cdn.com
 0.0.0.0 img1.blogblog.com
 0.0.0.0 imgur.ccgateway.net
 0.0.0.0 libs.platform.californiatimes.com
@@ -1252,7 +1185,6 @@
 0.0.0.0 s.alicdn.com
 0.0.0.0 s.swiftypecdn.com
 0.0.0.0 sc04.alicdn.com
-0.0.0.0 sdmntprwestus.oaiusercontent.com
 0.0.0.0 sf16-muse-va.ibytedtos.com
 0.0.0.0 spn-v1.revampcdn.com
 0.0.0.0 srv.armanet.us
@@ -1274,7 +1206,6 @@
 0.0.0.0 www.rsc-cdn.org
 0.0.0.0 wwwimg.roku.com
 0.0.0.0 z1.muscache.cn
-
 # === Fingerprinting, Fraud Prevention & User Profiling (Often Overreaching) ===
 # Domains used for device fingerprinting, fraud detection services, and user profiling,
 # which can sometimes be overly broad in their data collection.
@@ -1294,7 +1225,6 @@
 0.0.0.0 arkose.daex.identityservices.io
 0.0.0.0 beacon.riskified.com
 0.0.0.0 cdn.adsafeprotected.com
-0.0.0.0 cdn.doubleverify.com
 0.0.0.0 cdn.riskid.security
 0.0.0.0 cdn.sift.com
 0.0.0.0 cdn.siftscience.com
@@ -1324,7 +1254,6 @@
 0.0.0.0 script.anura.io
 0.0.0.0 secure.trust-provider.com
 0.0.0.0 tzm.px-cloud.net
-
 # === Consent Management Platforms (CMPs) & Privacy Tools (Often with Tracking) ===
 # Domains associated with consent management platforms, cookie banners, and privacy tools
 # which ironically sometimes involve their own tracking or extensive scripting.
@@ -1368,7 +1297,6 @@
 0.0.0.0 trustarc.com
 0.0.0.0 truste.com
 0.0.0.0 web.cmp.usercentrics.eu
-
 # === Miscellaneous Unwanted Services & Known Trackers ===
 # A catch-all for other types of unwanted services, specific known trackers,
 # or domains from the list that don't fit neatly into other categories but are
@@ -1423,8 +1351,6 @@
 0.0.0.0 app-sj28.marketo.com
 0.0.0.0 app-static.turtl.co
 0.0.0.0 ardrone.swoop.com
-0.0.0.0 asset.b3mxnuvcer.com
-0.0.0.0 asset.fwcdn3.com
 0.0.0.0 assets.asurion-ui.my.asurion53.com
 0.0.0.0 assets.churnkey.co
 0.0.0.0 assets.freedomadnetwork.com
@@ -1662,7 +1588,6 @@
 0.0.0.0 goblin.tools
 0.0.0.0 gojbtiqarctsc.life
 0.0.0.0 gos-api.gos-gsp.io
-0.0.0.0 h64.online-metrix.net
 0.0.0.0 halo.zellatech.com
 0.0.0.0 haxnode.net
 0.0.0.0 hc.tags.newscgp.com
@@ -1816,7 +1741,6 @@
 0.0.0.0 open-api.spot.im
 0.0.0.0 optinmonster.com
 0.0.0.0 optmnstr.com
-0.0.0.0 origin.wpc.ncep.noaa.gov
 0.0.0.0 ori-myphone-download.wondershare.cc
 0.0.0.0 oth.eve.mdt.qq.com
 0.0.0.0 oth.str.mdt.qq.com
@@ -1908,7 +1832,6 @@
 0.0.0.0 rtlog16-normal-useast5.tiktokv.us
 0.0.0.0 rts-static-prod.freshworksapi.com
 0.0.0.0 rutracker.org
-0.0.0.0 s.alicdn.com
 0.0.0.0 s.hoplon.pandora.com
 0.0.0.0 s.joinhoney.com
 0.0.0.0 s.nitropay.com
@@ -1944,7 +1867,6 @@
 0.0.0.0 sierra.kilo.ckapis.com
 0.0.0.0 signal.co
 0.0.0.0 sk-connect.api.swiftkey.com
-0.0.0.0 skillsoft-codecademy.fides-cdn.ethyca.com
 0.0.0.0 skimresources.com
 0.0.0.0 sks.mrkhub.com
 0.0.0.0 skullmagnets.com
@@ -1962,7 +1884,6 @@
 0.0.0.0 speedtest-cmh.dish-wireless.com.prod.hosts.ooklaserver.net
 0.0.0.0 speedtest-cvg.wsgo.net
 0.0.0.0 spot.im
-0.0.0.0 sr.studiostack.com
 0.0.0.0 staples.btttag.com
 0.0.0.0 stat.rokymedia.com
 0.0.0.0 static.affiliatly.com
@@ -1992,7 +1913,6 @@
 0.0.0.0 t98.nudevista.com
 0.0.0.0 t99.nudevista.com
 0.0.0.0 tackytrains.com
-0.0.0.0 tag.bounceexchange.com
 0.0.0.0 tag.clrstm.com
 0.0.0.0 tag.crsspxl.com
 0.0.0.0 tag.wknd.ai
@@ -2004,17 +1924,9 @@
 0.0.0.0 targeting.unrulymedia.com
 0.0.0.0 targetspot.com
 0.0.0.0 techhub.social
-0.0.0.0 telemetry.nvidia.com
-0.0.0.0 tempest.services.disqus.com
-0.0.0.0 test-perfops.blazingcdn.com
-0.0.0.0 test-perfops.haproxy.com
-0.0.0.0 test-perfops.idevops.suijinetworks.com
-0.0.0.0 test-perfops.ldgslb.com
-0.0.0.0 test-perfops.wedos.delivery
 0.0.0.0 thinfilm.com
 0.0.0.0 thm12.visa.com
 0.0.0.0 tiktok.adsmeasurement.com
-0.0.0.0 tns-counter.ru
 0.0.0.0 to.getnitropack.com
 0.0.0.0 top-fwz1.mail.ru
 0.0.0.0 topix.com
@@ -2030,7 +1942,6 @@
 0.0.0.0 userreport.com
 0.0.0.0 usersnap.com
 0.0.0.0 userstylesapi.com
-0.0.0.0 v.firebog.net
 0.0.0.0 various.com
 0.0.0.0 versioncheck.addons.mozilla.org
 0.0.0.0 viglink.com
@@ -2111,7 +2022,6 @@
 0.0.0.0 yleisradio.fi
 0.0.0.0 yourvm-a.online
 0.0.0.0 yumenetworks.com
-0.0.0.0 z1.muscache.cn
 0.0.0.0 zemanta.com
 0.0.0.0 zenaps.com
 0.0.0.0 zestads.com
