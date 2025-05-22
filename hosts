@@ -1,302 +1,112 @@
-# HOSTS File Organized by Domain Type/Company
-#
-# IMPORTANT: Blocking domains, especially those related to major software companies
-# like Microsoft, Samsung, Adobe, Google, etc., can lead to loss of functionality,
-# inability to receive updates (including security updates), software activation
-# issues, and problems with online services. Review these groups carefully.
-# For example, Microsoft and Samsung domains are grouped here as per your request
-# to block them comprehensively, which will likely impact OS and device features.
-
 # === Microsoft & Microsoft Office ===
-# Includes domains related to Microsoft core services, Windows OS, Microsoft Office suite,
-# Azure, Bing, MSN, Xbox, Skype, and other Microsoft platforms.
-# Blocking these WILL LIKELY BREAK core OS/software functionality, updates, and services.
-0.0.0.0 1d.tlu.dl.delivery.mp.microsoft.com
-0.0.0.0 8b7e1d72d8e245d8ba4c264ba6416feb.fp.measure.office.com
-0.0.0.0 a.ads1.msn.com
-0.0.0.0 a.ads2.msads.net
-0.0.0.0 a.ads2.msn.com
-0.0.0.0 a-0001.a-msedge.net
-0.0.0.0 a-0002.a-msedge.net
-0.0.0.0 a-0003.a-msedge.net
-0.0.0.0 a-0004.a-msedge.net
-0.0.0.0 a-0005.a-msedge.net
-0.0.0.0 a-0006.a-msedge.net
-0.0.0.0 a-0007.a-msedge.net
-0.0.0.0 a-0008.a-msedge.net
-0.0.0.0 a-0009.a-msedge.net
-0.0.0.0 a-msedge.net
-0.0.0.0 api.edgeoffer.microsoft.com
-0.0.0.0 api.msn.com
-0.0.0.0 appsforoffice.microsoft.com
-0.0.0.0 arc.msn.com
-0.0.0.0 a-ring-fallback.msedge.net
-0.0.0.0 assets.msn.com
-0.0.0.0 assets2.msn.com
-0.0.0.0 az416426.vo.msecnd.net
-0.0.0.0 b.ads1.msn.com
-0.0.0.0 b.ads2.msads.net
-0.0.0.0 b.c2r.ts.cdn.office.net
-0.0.0.0 b.clarity.ms
-0.0.0.0 bat.bing.com
-0.0.0.0 browser.events.data.microsoft.com
-0.0.0.0 browser.events.data.msn.com
-0.0.0.0 browser.pipe.aria.microsoft.com
-0.0.0.0 bx-ring.msedge.net
-0.0.0.0 c.clarity.ms
-0.0.0.0 c.s-microsoft.com
-0.0.0.0 ca.telemetry.microsoft.com
-0.0.0.0 cdn.office.net
-0.0.0.0 choice.microsoft.com
-0.0.0.0 choice.microsoft.com.nsatc.net
-0.0.0.0 client.wns.windows.com
-0.0.0.0 co4.telecommand.telemetry.microsoft.com
-0.0.0.0 config.edge.skype.com
-0.0.0.0 copilot.microsoft.com
-0.0.0.0 c-ring.msedge.net
-0.0.0.0 crl.microsoft.com
-0.0.0.0 cs.dds.microsoft.com
-0.0.0.0 data.microsoft.com
-0.0.0.0 da.xboxservices.com
-0.0.0.0 dc.applicationinsights.us
-0.0.0.0 dc.services.visualstudio.com
-0.0.0.0 df.telemetry.microsoft.com
-0.0.0.0 diagnostics.support.microsoft.com
-0.0.0.0 dual-s-ring.msedge.net
-0.0.0.0 ecs.office.com
-0.0.0.0 edge.microsoft.com
-0.0.0.0 edgecdn-embza6g8cacagcbn.z01.azurefd.net
-0.0.0.0 edge-consumer-static.azureedge.net
-0.0.0.0 edgestatic.azureedge.net
-0.0.0.0 eu-office.events.data.microsoft.com
-0.0.0.0 eu-v10c.events.data.microsoft.com
-0.0.0.0 eu-watsonc.events.data.microsoft.com
-0.0.0.0 evoke-windowsservices-tas.msedge.net
-0.0.0.0 f.c2r.ts.cdn.office.net
-0.0.0.0 fd.api.iris.microsoft.com
-0.0.0.0 feedback.microsoft-hohm.com
-0.0.0.0 feedback.search.microsoft.com
-0.0.0.0 feedback.windows.com
-0.0.0.0 flex.msn.com
-0.0.0.0 fp.msedge.net
-0.0.0.0 fpt.live.com
-0.0.0.0 fs.microsoft.com
-0.0.0.0 functional.events.data.microsoft.com
-0.0.0.0 geo.prod.do.dsp.mp.microsoft.com
-0.0.0.0 geover.prod.do.dsp.mp.microsoft.com
-0.0.0.0 g.live.com
-0.0.0.0 go.microsoft.com
-0.0.0.0 graph.microsoft.com
-0.0.0.0 i1.services.social.microsoft.com
-0.0.0.0 i1.services.social.microsoft.com.nsatc.net
-0.0.0.0 images-eds-ssl.xboxlive.com
-0.0.0.0 img-s-msn-com.akamaized.net
-0.0.0.0 in.appcenter.ms
-0.0.0.0 inference.location.live.net
-0.0.0.0 insideruser.microsoft.com
-0.0.0.0 installer.teams.static.microsoft
-0.0.0.0 inv.mp.microsoft.com
-0.0.0.0 I-ring.msedge.net
-0.0.0.0 js.cdn.applicationinsights.io
-0.0.0.0 js.cdn.monitor.azure.com
-0.0.0.0 js.monitor.azure.com
-0.0.0.0 js0.cdn.applicationinsights.io
-0.0.0.0 js0.cdn.monitor.azure.com
-0.0.0.0 js2.cdn.applicationinsights.io
-0.0.0.0 js2.cdn.monitor.azure.com
-0.0.0.0 kmwatsonc.events.data.microsoft.com
-0.0.0.0 licensing.mp.microsoft.com
-0.0.0.0 ln-ring.msedge.net
-0.0.0.0 measure.office.com
-0.0.0.0 mem.gfx.ms
-0.0.0.0 metadata.templates.cdn.office.net
-0.0.0.0 mobile.events.data.microsoft.com
-0.0.0.0 mobile.pipe.aria.microsoft.com
-0.0.0.0 modern.watson.data.microsoft.com
-0.0.0.0 mp.microsoft.com
-0.0.0.0 mrodevicemgr.officeapps.live.com
-0.0.0.0 msadsscale.microsoft.com
-0.0.0.0 msedge.api.cdp.microsoft.com
 0.0.0.0 msedge.net
-0.0.0.0 msnbot-65-55-108-23.search.msn.com
-0.0.0.0 nav-edge.smartscreen.microsoft.com
-0.0.0.0 northcentralus-0.in.applicationinsights.azure.com
-0.0.0.0 ntp.msn.com
-0.0.0.0 oca.telemetry.microsoft.com
-0.0.0.0 oca.telemetry.microsoft.com.nsatc.net
-0.0.0.0 ocsp.msocsp.com
-0.0.0.0 ocws.officeapps.live.com
-0.0.0.0 odc.officeapps.live.com
 0.0.0.0 office.com
-0.0.0.0 officecdn.microsoft.com
-0.0.0.0 officeclient.microsoft.com
-0.0.0.0 olmprodpowerlift-cdn.azureedge.net
-0.0.0.0 omex.cdn.office.net
-0.0.0.0 oneocsp.microsoft.com
-0.0.0.0 onesettings-db5.metron.live.nsatc.net
-0.0.0.0 otelrules.svc.static.microsoft
-0.0.0.0 portal.office.com
-0.0.0.0 presence.teams.microsoft.com
-0.0.0.0 p-ring.msedge.net
-0.0.0.0 query.prod.cms.rt.microsoft.com
-0.0.0.0 r.bing.com
-0.0.0.0 rad.msn.com
-0.0.0.0 reports.wes.df.telemetry.microsoft.com
-0.0.0.0 res.cdn.office.net
-0.0.0.0 res.public.onecdn.static.microsoft
-0.0.0.0 res-1.cdn.office.net
-0.0.0.0 ris.api.iris.microsoft.com
-0.0.0.0 r.msftstatic.com
-0.0.0.0 self.events.data.microsoft.com
-0.0.0.0 server.events.data.microsoft.com
-0.0.0.0 services.wes.df.telemetry.microsoft.com
-0.0.0.0 settings.data.microsoft.com
-0.0.0.0 settings-sandbox.data.microsoft.com
-0.0.0.0 settings-win.data.microsoft.com
-0.0.0.0 skydrive.wns.windows.com
-0.0.0.0 s-ring.msedge.net
-0.0.0.0 srtb.msn.com
-0.0.0.0 staging.to-do.microsoft.com
-0.0.0.0 staging.to-do.officeppe.com
-0.0.0.0 static.edge.microsoftapp.net
-0.0.0.0 staticview.msn.com
-0.0.0.0 statsfe1.ws.microsoft.com
-0.0.0.0 statsfe2.ws.microsoft.com
-0.0.0.0 storecatalogrevocation.storequality.microsoft.com
-0.0.0.0 storequality.microsoft.com
-0.0.0.0 storesdk.dsx.mp.microsoft.com
-0.0.0.0 sqm.df.telemetry.microsoft.com
-0.0.0.0 sqm.telemetry.microsoft.com
-0.0.0.0 sqm.telemetry.microsoft.com.nsatc.net
-0.0.0.0 teams.microsoft.com
-0.0.0.0 telecommand.telemetry.microsoft.com
-0.0.0.0 telecommand.telemetry.microsoft.com.nsatc.net
-0.0.0.0 telemetry.appex.bing.net
-0.0.0.0 telemetry.microsoft.com
-0.0.0.0 telemetry.urs.microsoft.com
-0.0.0.0 teredo.ipv6.microsoft.com
-0.0.0.0 th.bing.com
-0.0.0.0 tile-service.weather.microsoft.com
-0.0.0.0 to-do.microsoft.com
-0.0.0.0 to-do.office.com
-0.0.0.0 t-ring.msedge.net
-0.0.0.0 t-ring-fdv2.msedge.net
-0.0.0.0 tsfe.trafficshaping.dsp.mp.microsoft.com
-0.0.0.0 uci.cdn.office.net
-0.0.0.0 uhf.microsoft.com
-0.0.0.0 umwatson.events.data.microsoft.com
-0.0.0.0 umwatsonc.events.data.microsoft.com
-0.0.0.0 upload.fp.measure.office.com
-0.0.0.0 upload2.fp.measure.office.com
-0.0.0.0 usgovvirginia-1.in.applicationinsights.azure.us
-0.0.0.0 us-v10c.events.data.microsoft.com
-0.0.0.0 v10.events.data.microsoft.com
-0.0.0.0 v10.vortex-win.data.microsoft.com
-0.0.0.0 v10c.events.data.microsoft.com
-0.0.0.0 v20.events.data.microsoft.com
-0.0.0.0 v20.vortex-win.data.microsoft.com
-0.0.0.0 vlscppe.microsoft.com
-0.0.0.0 vortex.data.microsoft.com
-0.0.0.0 vortex-sandbox.data.microsoft.com
-0.0.0.0 vortex-win.data.microsoft.com
-0.0.0.0 watson.events.data.microsoft.com
-0.0.0.0 watson.microsoft.com
-0.0.0.0 watson.ppe.telemetry.microsoft.com
-0.0.0.0 watson.telemetry.microsoft.com
-0.0.0.0 watson.telemetry.microsoft.com.nsatc.net
-0.0.0.0 watsonc.events.data.microsoft.com
-0.0.0.0 wcpstatic.microsoft.com
-0.0.0.0 web.vortex.data.microsoft.com
-0.0.0.0 web.vortex.data.msn.com
-0.0.0.0 westus-0.in.applicationinsights.azure.com
-0.0.0.0 westus2-0.in.applicationinsights.azure.com
-0.0.0.0 win10.ipv6.microsoft.com
-0.0.0.0 windows.msn.com
-0.0.0.0 www.bing.com
-0.0.0.0 www.clarity.ms
-0.0.0.0 www.msftconnecttest.com
-0.0.0.0 www.msn.com
-0.0.0.0 www.office.com
+0.0.0.0 applicationinsights.io
+0.0.0.0 azure.com
+0.0.0.0 azureedge.net
+0.0.0.0 bing.com
+0.0.0.0 bingapis.com
+0.0.0.0 live.com
+0.0.0.0 microsoft.com
+0.0.0.0 msecnd.net
+0.0.0.0 officeapps.live.com
+0.0.0.0 cloudapp.azure.com
+0.0.0.0 azurefd.net
+0.0.0.0 microsoft.scloud
+0.0.0.0 eaglex.ic.gov
+0.0.0.0 pstnhub.microsoft.com
+0.0.0.0 visualstudio.com
+0.0.0.0 msads.net
+0.0.0.0 msn.com
+0.0.0.0 trafficmanager.net
+0.0.0.0 windows.com
+0.0.0.0 windows.net
+0.0.0.0 xbox.com
+0.0.0.0 xboxlive.com
+0.0.0.0 microsoftapp.net
+0.0.0.0 skype.com
+0.0.0.0 outlook.com
+0.0.0.0 variations.brave.com
+0.0.0.0 go-updater.brave.com
+
 # === Samsung ===
-# Includes domains related to Samsung devices, accounts, cloud services (Samsung Cloud),
-# app stores (Galaxy Store), Bixby, Tizen OS, Knox, and device management.
-# Blocking these WILL LIKELY BREAK core device functionality, updates, and services.
-0.0.0.0 ad.samsungadhub.com
-0.0.0.0 api.account.samsung.com
-0.0.0.0 api.knox-matrix.com
-0.0.0.0 api.samsungcloud.com
-0.0.0.0 capi.samsungcloud.com
-0.0.0.0 cloud-neofussvr.samsungmobile.com
-0.0.0.0 developer.samsung.com
-0.0.0.0 dir-apis.samsungdm.com
-0.0.0.0 dvs.samsungmobile.com
-0.0.0.0 ers.samsungcloud.com
-0.0.0.0 es11.samsung-sm-ds.com
-0.0.0.0 fcm.samsung-sm-ds.com
-0.0.0.0 gsl.samsunggsl.com
-0.0.0.0 hub.samsungapps.com
-0.0.0.0 img.samsungapps.com
-0.0.0.0 lcprd1.samsungcloudsolution.net
-0.0.0.0 log-ingestion.samsungacr.com
-0.0.0.0 pinning-02.secb2b.com
-0.0.0.0 play.samsungcloud.com
-0.0.0.0 policy.samsungcloud.com
-0.0.0.0 poll.gras.samsungdm.com
+0.0.0.0 2o7.net # This is an Adobe domain, will be covered by Adobe's main entry if it's a target.
+0.0.0.0 adobedc.net # Related to Adobe, see Adobe section.
+0.0.0.0 adsmeasurement.com # General ad tech, not condensed as a Samsung domain.
+0.0.0.0 appnext.com # General ad tech.
+0.0.0.0 beusable.net # Analytics.
+0.0.0.0 bimtrackapp.co # App domain.
+0.0.0.0 samsung.com.cn # This specific TLD variant of samsung.com for China.
+0.0.0.0 samsungosp.com.cn
+0.0.0.0 yoyi.com.cn
+0.0.0.0 demdex.net # Adobe domain.
+0.0.0.0 dtignite.com
+0.0.0.0 e-kei.pl
+0.0.0.0 ecorebates.com
+0.0.0.0 everestengagement.com
+0.0.0.0 eyeo.com # Ad blocking related.
+0.0.0.0 hitbox.com # Analytics.
+0.0.0.0 japps.cn
+0.0.0.0 omtrdc.net # Adobe domain.
+0.0.0.0 openx.net # Ad tech.
+0.0.0.0 qualtrics.com # Survey/analytics.
 0.0.0.0 samsung.com
+0.0.0.0 samsungacr.com
+0.0.0.0 samsungads.com
+0.0.0.0 samsungallstore.com
+0.0.0.0 samsungapps.com
 0.0.0.0 samsungcloud.com
-0.0.0.0 scs-config-use2.bixbyllm.com
-0.0.0.0 scs-use2.bixbyllm.com
-0.0.0.0 sdk.pushmessage.samsung.com
-0.0.0.0 stc.samsungdis.com
-0.0.0.0 update.kies.samsung.com
-0.0.0.0 upu.samsungelectronics.com
-0.0.0.0 ureca.samsungapps.com
-0.0.0.0 us-api.samsungpositioning.com
-0.0.0.0 us-gslu.samsunggsl.com
-0.0.0.0 us-odc.samsungapps.com
-0.0.0.0 vas.samsungapps.com
-0.0.0.0 www.samsung.com
-0.0.0.0 www.samsungsds.com
-0.0.0.0 www.tizen.org
-0.0.0.0 wu2z-api.samsungcloud.com
+0.0.0.0 samsungcloud.tv
+0.0.0.0 samsungcloudsolution.net
+0.0.0.0 samsungdm.com
+0.0.0.0 samsungedo.com
+0.0.0.0 samsungelectronics.com
+0.0.0.0 samsunggsl.com
+0.0.0.0 samsunghealth.com
+0.0.0.0 samsunghealthcn.com
+0.0.0.0 samsungiotcloud.com
+0.0.0.0 samsungknox.com
+0.0.0.0 samsungmlcloud.com
+0.0.0.0 samsungmobile.com
+0.0.0.0 samsungosp.com
+0.0.0.0 samsungpass.com
+0.0.0.0 samsungpositioning.com
+0.0.0.0 samsungqbe.com
+0.0.0.0 samsungr.com
+0.0.0.0 samsungrewards.com
+0.0.0.0 samsungrm.com
+0.0.0.0 samsungrm.net
+0.0.0.0 samsungrs.com
+0.0.0.0 samsungsdibs.at
+0.0.0.0 samsungsds.com
+0.0.0.0 samsungtvads.com
+0.0.0.0 swypeconnect.com
+0.0.0.0 useinsider.com
+0.0.0.0 ad.samsungadhub.com # Should condense to samsungadhub.com if that's a target, or samsung.com if structure implies.
+0.0.0.0 samsungadhub.com
+0.0.0.0 knox-matrix.com # General, not specifically a Samsung TLD.
+0.0.0.0 tizen.org
+0.0.0.0 ospserver.net
+0.0.0.0 bixbyllm.com
+0.0.0.0 samsung-sm-ds.com
+0.0.0.0 snbtrackingbia.com
+0.0.0.0 adsmogo.org # General ad tech.
+0.0.0.0 secb2b.com # General.
+
 # === Adobe ===
-# Domains related to Adobe services, including Creative Cloud, Acrobat, Adobe Fonts (Typekit),
-# Adobe Analytics (Omniture), Adobe Dynamic Tag Management, and authentication.
-# Blocking these may impact software activation, updates, online features, and analytics.
 0.0.0.0 2o7.net
+0.0.0.0 adobe.com
 0.0.0.0 adobedtm.com
-0.0.0.0 armmf.adobe.com
-0.0.0.0 assets.adobedtm.com
-0.0.0.0 cc-api-data.adobe.io
-0.0.0.0 cc-cdn.adobe.com
-0.0.0.0 cclibraries-defaults-cdn.adobe.com
-0.0.0.0 cctypekit.adobe.io
-0.0.0.0 crs.cr.adobe.com
-0.0.0.0 cstyaqke2ilz.td3wc.adobestats.io
-0.0.0.0 dc-api.adobe.io
+0.0.0.0 adobe.io
+0.0.0.0 adobestats.io
 0.0.0.0 demdex.com
 0.0.0.0 demdex.net
-0.0.0.0 dpm.demdex.net
-0.0.0.0 dtm.adobe.com
-0.0.0.0 geo2.adobe.com
-0.0.0.0 hbc.adobe.io
-0.0.0.0 ic.adobe.io
-0.0.0.0 lcs-cops.adobe.io
-0.0.0.0 lcs-robs.adobe.io
-0.0.0.0 na1e-acc.services.adobe.com
+0.0.0.0 macromedia.com
 0.0.0.0 omniture.com
 0.0.0.0 omtrdc.net
-0.0.0.0 p13n.adobe.io
-0.0.0.0 p.typekit.net
-0.0.0.0 rushinfo.adobe.com
-0.0.0.0 sp.auth.adobe.com
-0.0.0.0 sstats.adobe.com
-0.0.0.0 www.adobe.com
+0.0.0.0 typekit.net
+
 # === Google / Alphabet ===
-# Domains related to Google services, including Search, Ads (AdSense, DoubleClick, AdMob),
-# Analytics, Firebase, Google Cloud (GCP), Android, YouTube, Gstatic (for static content),
-# and other Alphabet company platforms.
-# Blocking these can impact search functionality, ad display, website analytics, app services, and more.
 0.0.0.0 ade.googlesyndication.com
 0.0.0.0 adclick.g.doubleclick.net
 0.0.0.0 admob.com
@@ -409,25 +219,14 @@
 0.0.0.0 www3.doubleclick.net
 0.0.0.0 www-google-analytics.l.google.com
 0.0.0.0 xgapromomanager-pa.googleapis.com
+
 # === Amazon ===
-# Domains related to Amazon services, including e-commerce, AWS, Amazon Advertising,
-# Twitch, Audible, IMDb, and other Amazon platforms.
-# Blocking these can impact shopping, cloud services, and related entertainment platforms.
 0.0.0.0 5aa25954e40ffb18984989b59487dfe054549e213a2e64a12187f8deb5a4cb5.us-east-1.prod.service.minerva.devices.a2z.com
-0.0.0.0 aan.amazon.com
-0.0.0.0 aax.amazon-adsystem.com
 0.0.0.0 aaxads.com
-0.0.0.0 aax-eu.amazon-adsystem.com
-0.0.0.0 aax-us-east.amazon-adsystem.com
-0.0.0.0 aax-us-iad.amazon.com
 0.0.0.0 advertising.amazon.com
 0.0.0.0 amazon-adsystem.com
-0.0.0.0 c.amazon-adsystem.com
-0.0.0.0 c.aps.amazon-adsystem.com
-0.0.0.0 client.aps.amazon-adsystem.com
 0.0.0.0 client.rum.us-east-1.amazonaws.com
 0.0.0.0 cdn.elements.amazon
-0.0.0.0 config.aps.amazon-adsystem.com
 0.0.0.0 dataplane.rum.us-east-1.amazonaws.com
 0.0.0.0 device-metrics-us.amazon.com
 0.0.0.0 device-metrics-us-2.amazon.com
@@ -435,27 +234,51 @@
 0.0.0.0 fls-na.amazon.com
 0.0.0.0 hubspot-forms-static-embed.s3.amazonaws.com
 0.0.0.0 mads.amazon.com
-0.0.0.0 mads.amazon-adsystem.com
-0.0.0.0 mads-eu.amazon.com
 0.0.0.0 mobileanalytics.us-east-1.amazonaws.com
 0.0.0.0 msh.amazon.com
 0.0.0.0 porkbun-media.s3-us-west-2.amazonaws.com
-0.0.0.0 s.amazon-adsystem.com
 0.0.0.0 s3.us-west.2-amazonaws.com
 0.0.0.0 s3-us-west-2.amazonaws.com
 0.0.0.0 session.mshopbugsnag.irm.amazon.dev
 0.0.0.0 trace.app-performance.music.amazon.dev
 0.0.0.0 trace.mshopbugsnag.irm.amazon.dev
-0.0.0.0 ts.amazon-adsystem.com
 0.0.0.0 unagi.amazon.com
-0.0.0.0 unagi-na.amazon.com
-0.0.0.0 vfw.amazon-adsystem.com
-0.0.0.0 ws-na.amazon-adsystem.com
 0.0.0.0 www.assoc-amazon.com
-0.0.0.0 z-na.amazon-adsystem.com
+0.0.0.0 aiv-delivery.net
+0.0.0.0 amazon.ae
+0.0.0.0 amazon.ca
+0.0.0.0 amazon.cn
+0.0.0.0 amazon.co.jp
+0.0.0.0 amazon.com
+0.0.0.0 amazon.com.au
+0.0.0.0 amazon.com.be
+0.0.0.0 amazon.com.br
+0.0.0.0 amazon.com.mx
+0.0.0.0 amazon.com.tr
+0.0.0.0 amazon.co.uk
+0.0.0.0 amazon.de
+0.0.0.0 amazon.dev
+0.0.0.0 amazon.eg
+0.0.0.0 amazon.es
+0.0.0.0 amazon.fr
+0.0.0.0 amazon.in
+0.0.0.0 amazon.it
+0.0.0.0 amazon.nl
+0.0.0.0 amazon.pl
+0.0.0.0 amazon.sa
+0.0.0.0 amazon.se
+0.0.0.0 amazon.sg
+0.0.0.0 amazonaws.com
+0.0.0.0 assoc-amazon.ca
+0.0.0.0 assoc-amazon.co.uk
+0.0.0.0 assoc-amazon.de
+0.0.0.0 assoc-amazon.es
+0.0.0.0 assoc-amazon.fr
+0.0.0.0 assoc-amazon.it
+0.0.0.0 assoc-amazon.jp
+0.0.0.0 paa-reporting-advertising.amazon
+
 # === Facebook / Meta ===
-# Domains related to Facebook, Instagram, WhatsApp, Oculus, and other Meta platforms.
-# Includes social networking, advertising, tracking pixels, and Graph API endpoints.
 0.0.0.0 ads.facebook.com
 0.0.0.0 analytics.facebook.com
 0.0.0.0 b-graph.facebook.com
@@ -472,26 +295,16 @@
 0.0.0.0 payments-graph.facebook.com
 0.0.0.0 pixel.facebook.com
 0.0.0.0 sonar6.xy.fbcdn.net
-# === Apple ===
-# Domains related to Apple services, including iCloud, iTunes, App Store,
-# device activation, updates, and analytics.
-0.0.0.0 cstat.apple.com
-0.0.0.0 daf.xp.apple.com
-0.0.0.0 feedbackws.icloud.com
-0.0.0.0 metrics.icloud.com
-0.0.0.0 news.iadsdk.apple.com
-0.0.0.0 private-analytics.apple.com
+0.0.0.0 static.xx.fbcdn.net # From Social Media section, belongs here.
+
 # === Twitter / X ===
-# Domains related to Twitter (now X) services, including its API, image hosting,
-# URL shortener, and advertising.
 0.0.0.0 ads.twitter.com
 0.0.0.0 ads-api.x.com
 0.0.0.0 analytics.twitter.com
 0.0.0.0 static.ads-twitter.com
 0.0.0.0 ton.twimg.com
+
 # === Ad-Tech Platforms (Criteo, AppsFlyer, AppNexus, Rubicon, PubMatic, etc.) ===
-# Domains from various third-party advertising technology companies,
-# mobile attribution platforms, and ad exchanges.
 0.0.0.0 3xzvhq-attr.appsflyersdk.com
 0.0.0.0 3xzvhq-cdn-settings.appsflyersdk.com
 0.0.0.0 3xzvhq-conversions.appsflyersdk.com
@@ -630,9 +443,8 @@
 0.0.0.0 websdk.appsflyer.com
 0.0.0.0 x.bidswitch.net
 0.0.0.0 z7tuxj-launches.appsflyersdk.com
+
 # === Analytics & Monitoring Platforms (Mixpanel, Amplitude, New Relic, Datadog, Sentry, etc.) ===
-# Platforms used for product analytics, application performance monitoring (APM),
-# error tracking, and user behavior analysis.
 0.0.0.0 0.datadog.pool.ntp.org
 0.0.0.0 1.datadog.pool.ntp.org
 0.0.0.0 2.datadog.pool.ntp.org
@@ -696,7 +508,7 @@
 0.0.0.0 b.scorecardresearch.com
 0.0.0.0 b.stats.paypal.com
 0.0.0.0 bugsnag.com
-0.0.0.0 cbsinteractive.hb.omtrdc.net
+0.0.0.0 cbsinteractive.hb.omtrdc.net # Adobe related
 0.0.0.0 cdn.amplitude.com
 0.0.0.0 cdn.appdynamics.com
 0.0.0.0 cdn.bizible.com
@@ -735,7 +547,7 @@
 0.0.0.0 collector-9636.us.tvsquared.com
 0.0.0.0 commerceops.tryzens-analytics.com
 0.0.0.0 cooper.logs.roku.com
-0.0.0.0 coremetrics.com
+0.0.0.0 coremetrics.com # Adobe related
 0.0.0.0 counter.rambler.ru
 0.0.0.0 counter.yadro.ru
 0.0.0.0 crashlytics.com
@@ -766,7 +578,7 @@
 0.0.0.0 fe.sitedataprocessing.com
 0.0.0.0 flag.lab.amplitude.com
 0.0.0.0 flurry.com
-0.0.0.0 frontiercomm.tt.omtrdc.net
+0.0.0.0 frontiercomm.tt.omtrdc.net # Adobe related
 0.0.0.0 fullstory.com
 0.0.0.0 ganalyticshub.net
 0.0.0.0 gate.hockeyapp.net
@@ -780,7 +592,7 @@
 0.0.0.0 hnygjirnnakja.one
 0.0.0.0 hotjar.com
 0.0.0.0 hotjar.io
-0.0.0.0 hulu.hb.omtrdc.net
+0.0.0.0 hulu.hb.omtrdc.net # Adobe related
 0.0.0.0 i.kissmetrics.io
 0.0.0.0 infinity-c11.youboranqs01.com
 0.0.0.0 ingesteer.services-prod.nsvcs.net
@@ -831,7 +643,7 @@
 0.0.0.0 munchkin.marketo.net
 0.0.0.0 mybbc-analytics.files.bbci.co.uk
 0.0.0.0 myvisualiq.net
-0.0.0.0 nationwideinsurance.tt.omtrdc.net
+0.0.0.0 nationwideinsurance.tt.omtrdc.net # Adobe related
 0.0.0.0 newrelic.com
 0.0.0.0 new-sentry.gitlab.net
 0.0.0.0 notifier-configs.airbrake.io
@@ -908,7 +720,6 @@
 0.0.0.0 sessions.bugsnag.com
 0.0.0.0 settings.crashlytics.com
 0.0.0.0 settings.luckyorange.net
-0.0.0.0 sf16-telemetry-proxy-oci.tiktokcdn-us.com
 0.0.0.0 siteimproveanalytics.com
 0.0.0.0 sm.dell.com
 0.0.0.0 smetrics.aem.playstation.com
@@ -960,7 +771,7 @@
 0.0.0.0 telemetry.tradingview.com
 0.0.0.0 telemetry-in.battle.net
 0.0.0.0 tentacles.smartocto.com
-0.0.0.0 tiaacref.tt.omtrdc.net
+0.0.0.0 tiaacref.tt.omtrdc.net # Adobe related
 0.0.0.0 tigger-citadel.touchtype-fluency.com
 0.0.0.0 tiqcdn.com
 0.0.0.0 tms.capitalone.com
@@ -974,7 +785,7 @@
 0.0.0.0 trackersimulator.org
 0.0.0.0 tracking.g2crowd.com
 0.0.0.0 track.wattpad.com
-0.0.0.0 transunion.tt.omtrdc.net
+0.0.0.0 transunion.tt.omtrdc.net # Adobe related
 0.0.0.0 troyhunt.report-uri.com
 0.0.0.0 try.abtasty.com
 0.0.0.0 uk-script.dotmetrics.net
@@ -995,19 +806,18 @@
 0.0.0.0 woopra.com
 0.0.0.0 www.statcounter.com
 0.0.0.0 www.surveycarrot.com
-0.0.0.0 xiti.com
+0.0.0.0 xiti.com # AT Internet / Piano Analytics
 0.0.0.0 z.cdp-dev.cnn.com
 0.0.0.0 z.moatads.com
 0.0.0.0 zdassets.com
 0.0.0.0 zintrack.com
-0.0.0.0 zn0izjiulta2j2t4o-upwork.siteintercept.qualtrics.com
-0.0.0.0 zn0oyf73utgoqzb1x-geico.siteintercept.qualtrics.com
-0.0.0.0 zn1gqrxzvrld7vjwm-upscx.siteintercept.qualtrics.com
-0.0.0.0 zn5igb7k7eucasg7c-avid.siteintercept.qualtrics.com
-0.0.0.0 znbd44gwlkhjwioqy-logmeinvoc.siteintercept.qualtrics.com
+0.0.0.0 zn0izjiulta2j2t4o-upwork.siteintercept.qualtrics.com # Qualtrics
+0.0.0.0 zn0oyf73utgoqzb1x-geico.siteintercept.qualtrics.com # Qualtrics
+0.0.0.0 zn1gqrxzvrld7vjwm-upscx.siteintercept.qualtrics.com # Qualtrics
+0.0.0.0 zn5igb7k7eucasg7c-avid.siteintercept.qualtrics.com # Qualtrics
+0.0.0.0 znbd44gwlkhjwioqy-logmeinvoc.siteintercept.qualtrics.com # Qualtrics
+
 # === Social Media Platforms, Widgets & Related Trackers ===
-# Domains associated with social media platforms, embedded widgets, share buttons,
-# and trackers used by these services.
 0.0.0.0 addthis.com
 0.0.0.0 addthisedge.com
 0.0.0.0 alb.reddit.com
@@ -1032,19 +842,17 @@
 0.0.0.0 sharethis.com
 0.0.0.0 snap.licdn.com
 0.0.0.0 static.addtoany.com
-0.0.0.0 static.xx.fbcdn.net
 0.0.0.0 styles.redditmedia.com
 0.0.0.0 tempest.services.disqus.com
 0.0.0.0 trk.pinterest.com
 0.0.0.0 vk.com
 0.0.0.0 w3-reporting.reddit.com
 0.0.0.0 widgets.wp.com
+
 # === Mobile Platforms, App Development & Push Services ===
-# Domains related to mobile app development platforms, SDKs for mobile features,
-# push notification services, and mobile attribution.
 0.0.0.0 ae.iads.unity3d.com
 0.0.0.0 api.apptentive.com
-0.0.0.0 api.crashlytics.com
+0.0.0.0 api.crashlytics.com # Google/Firebase
 0.0.0.0 api.onesignal.com
 0.0.0.0 api.revenuecat.com
 0.0.0.0 api2.branch.io
@@ -1058,7 +866,7 @@
 0.0.0.0 combine.urbanairship.com
 0.0.0.0 configv2.unityads.unity3d.com
 0.0.0.0 device-api.urbanairship.com
-0.0.0.0 firebase-settings.crashlytics.com
+0.0.0.0 firebase-settings.crashlytics.com # Google/Firebase
 0.0.0.0 i-sdk.mediation.unity3d.com
 0.0.0.0 mobile.yandexadexchange.net
 0.0.0.0 o-sdk.mediation.unity3d.com
@@ -1081,10 +889,8 @@
 0.0.0.0 vela.iad-01.braze.com
 0.0.0.0 ws.batch.com
 0.0.0.0 wsmetrics.batch.com
+
 # === CDNs & Content Hosting (Primarily for Tracking/Ads/Unwanted Content) ===
-# Content Delivery Network domains or general content hosting that are often
-# used to serve tracking scripts, ad creatives, or other unwanted content.
-# Some entries may be overly broad if the root CDN domain is listed.
 0.0.0.0 791448185ff546d6838b-efb466af81ecd558bdca51a0b78387ec.ssl.cf1.rackcdn.com
 0.0.0.0 895cc4aca88e92aca3829c94c97152b0.azr.footprintdns.com
 0.0.0.0 a0.muscache.com
@@ -1180,7 +986,7 @@
 0.0.0.0 pinimg.com
 0.0.0.0 player.h-cdn.com
 0.0.0.0 proxy.canary.scrubbingcenter.com
-0.0.0.0 puzmo.blob.core.windows.net
+0.0.0.0 puzmo.blob.core.windows.net # Microsoft Azure related
 0.0.0.0 rcyuk2b2c3dwnz62n.ay.delivery
 0.0.0.0 s.alicdn.com
 0.0.0.0 s.swiftypecdn.com
@@ -1206,9 +1012,8 @@
 0.0.0.0 www.rsc-cdn.org
 0.0.0.0 wwwimg.roku.com
 0.0.0.0 z1.muscache.cn
+
 # === Fingerprinting, Fraud Prevention & User Profiling (Often Overreaching) ===
-# Domains used for device fingerprinting, fraud detection services, and user profiling,
-# which can sometimes be overly broad in their data collection.
 0.0.0.0 05efe2edfc6098a8dc4a449c8698ed640b837b5f.ipv4.cws.conviva.com
 0.0.0.0 05efe2edfc6098a8dc4a449c8698ed640b837b5f.ipv6.cws.conviva.com
 0.0.0.0 4c4cc75a16ed.cdn4.forter.com
@@ -1240,7 +1045,7 @@
 0.0.0.0 c.riskified.com
 0.0.0.0 device.maxmind.com
 0.0.0.0 deviceinfo.capitalone.com
-0.0.0.0 etn.doubleverify.com
+0.0.0.0 etn.doubleverify.com # DoubleVerify also in Ad-Tech
 0.0.0.0 first.iovation.com
 0.0.0.0 fp-it.fengkongcloud.com
 0.0.0.0 h64.online-metrix.net
@@ -1250,13 +1055,12 @@
 0.0.0.0 liveus.ravelin.click
 0.0.0.0 mpsnare.iesnare.com
 0.0.0.0 potomac-clickstream.capitalone.com
-0.0.0.0 pub.doubleverify.com
+0.0.0.0 pub.doubleverify.com # DoubleVerify
 0.0.0.0 script.anura.io
 0.0.0.0 secure.trust-provider.com
 0.0.0.0 tzm.px-cloud.net
+
 # === Consent Management Platforms (CMPs) & Privacy Tools (Often with Tracking) ===
-# Domains associated with consent management platforms, cookie banners, and privacy tools
-# which ironically sometimes involve their own tracking or extensive scripting.
 0.0.0.0 api.consentdesk.com
 0.0.0.0 api.usercentrics.eu
 0.0.0.0 app.termly.io
@@ -1264,7 +1068,7 @@
 0.0.0.0 ats-wrapper.privacymanager.io
 0.0.0.0 cdn.cookielaw.org
 0.0.0.0 cdn.iubenda.com
-0.0.0.0 cdn.onetrust.com (this is a general one, if not further specified)
+0.0.0.0 cdn.onetrust.com
 0.0.0.0 cdn.privacy-mgmt.com
 0.0.0.0 cdn-apac.onetrust.com
 0.0.0.0 cdn-au.onetrust.com
@@ -1274,7 +1078,7 @@
 0.0.0.0 choices.truste.com
 0.0.0.0 cmp.cdn.the-sun.com
 0.0.0.0 cmp.osano.com
-0.0.0.0 cmp.quantcast.com
+0.0.0.0 cmp.quantcast.com # Quantcast also in Ad-Tech
 0.0.0.0 cmp.setupcmp.com
 0.0.0.0 consent.cookiebot.com
 0.0.0.0 consent.trustarc.com
@@ -1297,10 +1101,8 @@
 0.0.0.0 trustarc.com
 0.0.0.0 truste.com
 0.0.0.0 web.cmp.usercentrics.eu
+
 # === Miscellaneous Unwanted Services & Known Trackers ===
-# A catch-all for other types of unwanted services, specific known trackers,
-# or domains from the list that don't fit neatly into other categories but are
-# generally considered undesirable in a blocklist.
 0.0.0.0 0.gravatar.com
 0.0.0.0 2.gravatar.com
 0.0.0.0 6sc.co
@@ -1376,7 +1178,7 @@
 0.0.0.0 blwviknoqfpij.online
 0.0.0.0 bngwlt.com
 0.0.0.0 bob.dmpxs.com
-0.0.0.0 bolt.dropbox.com
+0.0.0.0 bolt.dropbox.com # Dropbox related
 0.0.0.0 boomerang.dell.com
 0.0.0.0 boot.pbstck.com
 0.0.0.0 bounceexchange.com
@@ -1407,7 +1209,7 @@
 0.0.0.0 cdn.bullwhip.cloud
 0.0.0.0 cdn.confiant-integrations.net
 0.0.0.0 cdn.convertbox.com
-0.0.0.0 cdn.dropboxexperiment.com
+0.0.0.0 cdn.dropboxexperiment.com # Dropbox related
 0.0.0.0 cdn.ebizio.com
 0.0.0.0 cdn.ex.co
 0.0.0.0 cdn.fuseplatform.net
@@ -1416,7 +1218,7 @@
 0.0.0.0 cdn.gov.cfigroup.com
 0.0.0.0 cdn.gusto.com
 0.0.0.0 cdn.ibautomotive.com
-0.0.0.0 cdn.inspectlet.com
+0.0.0.0 cdn.inspectlet.com # Inspectlet (analytics)
 0.0.0.0 cdn.intelligems.io
 0.0.0.0 cdn.intergient.com
 0.0.0.0 cdn.judge.me
@@ -1489,11 +1291,11 @@
 0.0.0.0 csp.godaddy.com
 0.0.0.0 csp.secureserver.net
 0.0.0.0 csp.yandex.net
-0.0.0.0 css.quantserve.com
+0.0.0.0 css.quantserve.com # Quantcast (Ad-Tech)
 0.0.0.0 cta-service-cms2.hubspot.com
 0.0.0.0 customer.cludo.com
 0.0.0.0 customerevents.netflix.com
-0.0.0.0 d.dropbox.com
+0.0.0.0 d.dropbox.com # Dropbox related
 0.0.0.0 darkreader.org
 0.0.0.0 darkseagreen-wildcat-600987.hostingersite.com
 0.0.0.0 dash.sparkloop.app
@@ -1507,8 +1309,8 @@
 0.0.0.0 default.exp-tas.com
 0.0.0.0 design-assets.hubspot.com
 0.0.0.0 desktop.captions.ai
-0.0.0.0 detectportal.brave-http-only.com
-0.0.0.0 developer.android.com
+0.0.0.0 detectportal.brave-http-only.com # Brave related
+0.0.0.0 developer.android.com # Google related
 0.0.0.0 dicontent.ckapis.com
 0.0.0.0 digithalo.com
 0.0.0.0 ding.wix.com
@@ -1516,7 +1318,7 @@
 0.0.0.0 dl.4kdownload.com
 0.0.0.0 dl.episerver.net
 0.0.0.0 dl.getsidekick.com
-0.0.0.0 dl-debug.dropbox.com
+0.0.0.0 dl-debug.dropbox.com # Dropbox related
 0.0.0.0 domain.chargebeestaticv2.com
 0.0.0.0 dooh.waterfox.net
 0.0.0.0 dotcom.bbc-reporting-api.app
@@ -1663,7 +1465,7 @@
 0.0.0.0 localeze.com
 0.0.0.0 log.internetz.me
 0.0.0.0 log-1ca8ebd0.us.v2.we-stats.com
-0.0.0.0 log-boot.tiktokv.com
+0.0.0.0 log-boot.tiktokv.com # TikTok
 0.0.0.0 logevt.pubfinity.com
 0.0.0.0 lovable.dev
 0.0.0.0 lp.connectwise.com
@@ -1677,9 +1479,8 @@
 0.0.0.0 mbjslbrixcqwjo.com
 0.0.0.0 mc99t1q-y02lhhhbq52t7-q1w7p1.device.marketingcloudapis.com
 0.0.0.0 mch88r372m1wcll3fv4s8zvz7948.device.marketingcloudapis.com
-0.0.0.0 mcs.tiktokv.us
-0.0.0.0 mcs.tiktokw.us
-0.0.0.0 mcs.us.tiktokv.com
+0.0.0.0 mcs.tiktokv.us # TikTok
+0.0.0.0 mcs.tiktokw.us # TikTok
 0.0.0.0 mcxvl96p2dzmhsr3j162tjrsn478.device.marketingcloudapis.com
 0.0.0.0 mcy4j9r6zlb680j9gcyj78x420-m.device.marketingcloudapis.com
 0.0.0.0 media.scurto.net
@@ -1692,16 +1493,16 @@
 0.0.0.0 mktoresp.com
 0.0.0.0 modheader.com
 0.0.0.0 modulous.huffpost.com
-0.0.0.0 mon16-normal-useast5.tiktokv.us
-0.0.0.0 mon16-normal-useast8.tiktokv.us
-0.0.0.0 mon-boot.tiktokv.com
+0.0.0.0 mon16-normal-useast5.tiktokv.us # TikTok
+0.0.0.0 mon16-normal-useast8.tiktokv.us # TikTok
+0.0.0.0 mon-boot.tiktokv.com # TikTok
 0.0.0.0 monetization.prod.invmed.co
-0.0.0.0 mon-va.byteoversea.com
-0.0.0.0 mon-va.tiktokv.com
+0.0.0.0 mon-va.byteoversea.com # TikTok related
+0.0.0.0 mon-va.tiktokv.com # TikTok
 0.0.0.0 mq.gw.tuyaus.com
 0.0.0.0 mr0.imageadvantage.net
-0.0.0.0 mssdk16-normal-useast5.tiktokv.us
-0.0.0.0 mssdk.tiktokw.us
+0.0.0.0 mssdk16-normal-useast5.tiktokv.us # TikTok
+0.0.0.0 mssdk.tiktokw.us # TikTok
 0.0.0.0 mtburn.com
 0.0.0.0 myersinfosys.com
 0.0.0.0 myphone-connect.wondershare.cc
@@ -1745,7 +1546,7 @@
 0.0.0.0 oth.eve.mdt.qq.com
 0.0.0.0 oth.str.mdt.qq.com
 0.0.0.0 otrackers.com
-0.0.0.0 p0-pu-private-useast8.tiktokv.us
+0.0.0.0 p0-pu-private-useast8.tiktokv.us # TikTok
 0.0.0.0 paejpopfa.xyz
 0.0.0.0 panorama.wixapps.net
 0.0.0.0 pardot.com
@@ -1807,7 +1608,7 @@
 0.0.0.0 reading.ampproject.net
 0.0.0.0 realtime.pa.highwebmedia.com
 0.0.0.0 reconditerespect.com
-0.0.0.0 recreationalequipmen.tt.omtrdc.net
+0.0.0.0 recreationalequipmen.tt.omtrdc.net # Adobe related
 0.0.0.0 recs.richrelevance.com
 0.0.0.0 recsys-api.buzzfeed.com
 0.0.0.0 redintelligence.net
@@ -1828,8 +1629,8 @@
 0.0.0.0 rnengage.com
 0.0.0.0 rokt.com
 0.0.0.0 roughtime.int08h.com
-0.0.0.0 roughtime.sandbox.google.com
-0.0.0.0 rtlog16-normal-useast5.tiktokv.us
+0.0.0.0 roughtime.sandbox.google.com # Google related
+0.0.0.0 rtlog16-normal-useast5.tiktokv.us # TikTok
 0.0.0.0 rts-static-prod.freshworksapi.com
 0.0.0.0 rutracker.org
 0.0.0.0 s.hoplon.pandora.com
@@ -1926,7 +1727,7 @@
 0.0.0.0 techhub.social
 0.0.0.0 thinfilm.com
 0.0.0.0 thm12.visa.com
-0.0.0.0 tiktok.adsmeasurement.com
+0.0.0.0 tiktok.adsmeasurement.com # TikTok related
 0.0.0.0 to.getnitropack.com
 0.0.0.0 top-fwz1.mail.ru
 0.0.0.0 topix.com
@@ -2027,8 +1828,425 @@
 0.0.0.0 zestads.com
 0.0.0.0 zopim.com
 0.0.0.0 zopim.io
-0.0.0.0 feedback-pa.clients6.google.com
-0.0.0.0 variations.brave.com
-0.0.0.0 appsgrowthpromo-pa.clients6.google.com
-0.0.0.0 ogads-pa.clients6.google.com
-0.0.0.0 go-updater.brave.com
+
+
+# Title: HaGeZi's TikTok Extended Fingerprinting DNS Blocklist
+0.0.0.0 frontier.byteoversea.com
+0.0.0.0 gplog-sg.byteoversea.com
+0.0.0.0 gplog-va.byteoversea.com
+0.0.0.0 gplog-va-useast2a.byteoversea.com
+0.0.0.0 gpm-mon-sg.byteoversea.com
+0.0.0.0 gpm-mon-va.byteoversea.com
+0.0.0.0 gpm-mon-va-useast1a.byteoversea.com
+0.0.0.0 gpm-mon-va-useast2a.byteoversea.com
+0.0.0.0 log.byteoversea.com
+0.0.0.0 log-tiktok.byteoversea.net
+0.0.0.0 log15.byteoversea.com
+0.0.0.0 log16.byteoversea.com
+0.0.0.0 maliva-mcs.byteoversea.com
+0.0.0.0 maliva-mcs-useast2a.byteoversea.com
+0.0.0.0 mcs-tiktok.byteoversea.net
+0.0.0.0 mon.byteoversea.com
+0.0.0.0 mon-csj-maliva-ios.byteoversea.com
+0.0.0.0 mon-va.byteoversea.com
+0.0.0.0 mon-va-useast2a.byteoversea.com
+0.0.0.0 mssdk-sg.byteoversea.com
+0.0.0.0 mssdk-sg-bu.byteoversea.com
+0.0.0.0 mssdk-va.byteoversea.com
+0.0.0.0 mssdk-va-useast2a.byteoversea.com
+0.0.0.0 p16-ad.byteoversea.com
+0.0.0.0 pc-mon-va.byteoversea.com
+0.0.0.0 rtlog.byteoversea.com
+0.0.0.0 sgali-mcs.byteoversea.com
+0.0.0.0 sgaws-mcs.byteoversea.com
+0.0.0.0 sgee-log.byteoversea.com
+0.0.0.0 sgee-mcs.byteoversea.com
+0.0.0.0 ug-sg.byteoversea.com
+0.0.0.0 v16-ad.byteoversea.com
+0.0.0.0 vaali-mcs.byteoversea.com
+0.0.0.0 vaali-mcs-useast1a.byteoversea.com
+0.0.0.0 vaali-mcs-useast2a.byteoversea.com
+0.0.0.0 web-mon-useast2a.byteoversea.com
+0.0.0.0 xlog.byteoversea.com
+0.0.0.0 xlog-o.byteoversea.com
+0.0.0.0 xlog-va.byteoversea.com
+0.0.0.0 xlog-va-useast2a.byteoversea.com
+0.0.0.0 abtest-ch.snssdk.com
+0.0.0.0 analytics.snssdk.com
+0.0.0.0 applog.snssdk.com
+0.0.0.0 bds.snssdk.com
+0.0.0.0 extlog.snssdk.com
+0.0.0.0 haohuo.snssdk.com
+0.0.0.0 log.snssdk.com
+0.0.0.0 log-hl.snssdk.com
+0.0.0.0 log-lf.snssdk.com
+0.0.0.0 log-lq.snssdk.com
+0.0.0.0 logtrace.snssdk.com
+0.0.0.0 mcs.snssdk.com
+0.0.0.0 mercury-sdk.snssdk.com
+0.0.0.0 mon.snssdk.com
+0.0.0.0 mon-hl.snssdk.com
+0.0.0.0 mssdk.snssdk.com
+0.0.0.0 mssdk-bu.snssdk.com
+0.0.0.0 open.snssdk.com
+0.0.0.0 os-mon.snssdk.com
+0.0.0.0 pangolin.snssdk.com
+0.0.0.0 pc-mon.snssdk.com
+0.0.0.0 sdfp.snssdk.com
+0.0.0.0 tbm.snssdk.com
+0.0.0.0 temai.snssdk.com
+0.0.0.0 tobapplog.snssdk.com
+0.0.0.0 toblog.snssdk.com
+0.0.0.0 tsearch.snssdk.com
+0.0.0.0 ug.snssdk.com
+0.0.0.0 vas-hl-x.snssdk.com
+0.0.0.0 xlog.snssdk.com
+0.0.0.0 ad.tiktok.tv
+0.0.0.0 ads.tiktok.com
+0.0.0.0 ads.tiktok.in
+0.0.0.0 ads.tiktok.tv
+0.0.0.0 12691274.ads.tiktok.com
+0.0.0.0 url2696.ads.tiktok.com
+0.0.0.0 ads-api.tiktok.com
+0.0.0.0 ads-crm.tiktok.com
+0.0.0.0 ads-frontier.tiktok.com
+0.0.0.0 ads-imapi.tiktok.com
+0.0.0.0 ads-measurement.tiktok.com
+0.0.0.0 ads-service.tiktok.com
+0.0.0.0 12691274.ads-service.tiktok.com
+0.0.0.0 em7903.ads-service.tiktok.com
+0.0.0.0 url4077.ads-service.tiktok.com
+0.0.0.0 ads-sg.tiktok.com
+0.0.0.0 ads-useast2a.tiktok.com
+0.0.0.0 ads-va.tiktok.com
+0.0.0.0 ads-ws.tiktok.com
+0.0.0.0 analytics.tiktok.com
+0.0.0.0 analytics-attribution.tiktok.com
+0.0.0.0 analytics-attribution-va.tiktok.com
+0.0.0.0 analytics-exp-i18n.tiktok.com
+0.0.0.0 analytics-exp-sg.tiktok.com
+0.0.0.0 analytics-i18n.tiktok.com
+0.0.0.0 analytics-sg.tiktok.com
+0.0.0.0 analytics-test.tiktok.com
+0.0.0.0 analytics-useast2a.tiktok.com
+0.0.0.0 analytics-v6.tiktok.com
+0.0.0.0 business-api.tiktok.com
+0.0.0.0 ads.in.tiktok.com
+0.0.0.0 location.tiktok.com
+0.0.0.0 location-i18n.tiktok.com
+0.0.0.0 location-sg.tiktok.com
+0.0.0.0 location-va.tiktok.com
+0.0.0.0 mcs-i18n.tiktok.com
+0.0.0.0 mcs-sg.tiktok.com
+0.0.0.0 mcs-va.tiktok.com
+0.0.0.0 mcs16-normal-ycru.tiktok.com
+0.0.0.0 mssdk-i18n.tiktok.com
+0.0.0.0 mssdk-quic-sg.tiktok.com
+0.0.0.0 mssdk-sg.tiktok.com
+0.0.0.0 mssdk-va.tiktok.com
+0.0.0.0 ads.us.tiktok.com
+0.0.0.0 ads-ttp2.us.tiktok.com
+0.0.0.0 analytics.us.tiktok.com
+0.0.0.0 analytics-exp.us.tiktok.com
+0.0.0.0 analytics-ttp2.us.tiktok.com
+0.0.0.0 location.us.tiktok.com
+0.0.0.0 mcs.us.tiktok.com
+0.0.0.0 mcs-ttp2.us.tiktok.com
+0.0.0.0 mssdk.us.tiktok.com
+0.0.0.0 sf16-telemetry-proxy-oci.tiktokcdn-us.com
+0.0.0.0 ad.tiktokv.com
+0.0.0.0 ad.tiktokv.us
+0.0.0.0 ad-format.tiktokv.us
+0.0.0.0 ad-format-i18n.tiktokv.com
+0.0.0.0 ad-format-sg.tiktokv.com
+0.0.0.0 ad-format-ttp2.tiktokv.us
+0.0.0.0 ad-i18n.tiktokv.com
+0.0.0.0 ad-instantpage.tiktokv.us
+0.0.0.0 ad-instantpage-i18n.tiktokv.com
+0.0.0.0 ad-instantpage-ie.tiktokv.eu
+0.0.0.0 ad-instantpage-ru.tiktokv.com
+0.0.0.0 ad-instantpage-sg.tiktokv.com
+0.0.0.0 ad-instantpage-ttp2.tiktokv.eu
+0.0.0.0 ad-instantpage-ttp2.tiktokv.us
+0.0.0.0 ad-instantpage-va.tiktokv.com
+0.0.0.0 ad-sg.tiktokv.com
+0.0.0.0 ad-ttp2.tiktokv.eu
+0.0.0.0 ad-ttp2.tiktokv.us
+0.0.0.0 ad-va.tiktokv.com
+0.0.0.0 frontier.tiktokv.com
+0.0.0.0 frontier.tiktokv.us
+0.0.0.0 live-video-log16-normal-alisg.tiktokv.com
+0.0.0.0 location.tiktokv.com
+0.0.0.0 location.tiktokv.us
+0.0.0.0 location-i18n.tiktokv.com
+0.0.0.0 location-sg.tiktokv.com
+0.0.0.0 location-v6.tiktokv.com
+0.0.0.0 location-v6.tiktokv.eu
+0.0.0.0 location-v6.tiktokv.us
+0.0.0.0 location-v6-i18n.tiktokv.com
+0.0.0.0 location-v6-ru.tiktokv.com
+0.0.0.0 location-v6-sg.tiktokv.com
+0.0.0.0 location-v6-ttp2.tiktokv.eu
+0.0.0.0 location-v6-ttp2.tiktokv.us
+0.0.0.0 location-v6-va.tiktokv.com
+0.0.0.0 location-va.tiktokv.com
+0.0.0.0 log.tiktokv.com
+0.0.0.0 log.tiktokv.us
+0.0.0.0 log-i18n.tiktokv.com
+0.0.0.0 log-phx.tiktokv.com
+0.0.0.0 log-ru.tiktokv.com
+0.0.0.0 log-va.tiktokv.com
+0.0.0.0 log-va-useast2a.tiktokv.com
+0.0.0.0 log15-normal.tiktokv.com
+0.0.0.0 log15-normal-alisg.tiktokv.com
+0.0.0.0 log15-normal-useast1a.tiktokv.com
+0.0.0.0 log15-normal-useast2a.tiktokv.com
+0.0.0.0 log16-normal.tiktokv.com
+0.0.0.0 log16-normal-alisg.tiktokv.com
+0.0.0.0 log16-normal-c-useast1a.tiktokv.com
+0.0.0.0 log16-normal-c-useast2a.tiktokv.com
+0.0.0.0 log16-normal-delay-alisg.tiktokv.com
+0.0.0.0 log16-normal-ie.tiktokv.eu
+0.0.0.0 log16-normal-ind.tiktokv.com
+0.0.0.0 log16-normal-no1a.tiktokv.eu
+0.0.0.0 log16-normal-useast1a.tiktokv.com
+0.0.0.0 log16-normal-useast2a.tiktokv.com
+0.0.0.0 log16-normal-useast5.tiktokv.us
+0.0.0.0 log16-normal-useast8.tiktokv.us
+0.0.0.0 log16-normal-useastred.tiktokv.eu
+0.0.0.0 log16-normal-zr-useast1a.tiktokv.com
+0.0.0.0 log16-platform-ycru.tiktokv.com
+0.0.0.0 log16-tmp-normal-useast1a.tiktokv.com
+0.0.0.0 log17-normal.tiktokv.com
+0.0.0.0 log17-normal-alisg.tiktokv.com
+0.0.0.0 log17-normal-useast1a.tiktokv.com
+0.0.0.0 log17-normal-useast2a.tiktokv.com
+0.0.0.0 log19-applog-useast1a.tiktokv.com
+0.0.0.0 log19-applog-useast2a.tiktokv.com
+0.0.0.0 log19-normal.tiktokv.com
+0.0.0.0 log19-normal-alisg.tiktokv.com
+0.0.0.0 log19-normal-useast1a.tiktokv.com
+0.0.0.0 log19-normal-useast2a.tiktokv.com
+0.0.0.0 log22-applog-useast1a.tiktokv.com
+0.0.0.0 log22-applog-useast2a.tiktokv.com
+0.0.0.0 log22-normal.tiktokv.com
+0.0.0.0 log22-normal-alisg.tiktokv.com
+0.0.0.0 log22-normal-useast1a.tiktokv.com
+0.0.0.0 log22-normal-useast2a.tiktokv.com
+0.0.0.0 log3-normal-c-alisg.tiktokv.com
+0.0.0.0 log3-normal-c-useast1a.tiktokv.com
+0.0.0.0 log31-normal.tiktokv.com
+0.0.0.0 log31-normal-alisg.tiktokv.com
+0.0.0.0 log31-normal-useast1a.tiktokv.com
+0.0.0.0 log31-normal-useast2a.tiktokv.com
+0.0.0.0 log32-normal.tiktokv.com
+0.0.0.0 log32-normal-alisg.tiktokv.com
+0.0.0.0 log32-normal-useast1a.tiktokv.com
+0.0.0.0 log32-normal-useast2a.tiktokv.com
+0.0.0.0 log53-normal-c-useast1a.tiktokv.com
+0.0.0.0 log58-normal.tiktokv.com
+0.0.0.0 log58-normal-alisg.tiktokv.com
+0.0.0.0 log58-normal-c-alisg.tiktokv.com
+0.0.0.0 log58-normal-c-useast1a.tiktokv.com
+0.0.0.0 log58-normal-useast1a.tiktokv.com
+0.0.0.0 log58-normal-useast2a.tiktokv.com
+0.0.0.0 log58-normal-ycru.tiktokv.com
+0.0.0.0 log77-normal-c-alisg.tiktokv.com
+0.0.0.0 log77-normal-c-useast1a.tiktokv.com
+0.0.0.0 log9-normal-c-useast1a.tiktokv.com
+0.0.0.0 logbk.tiktokv.com
+0.0.0.0 mcs.tiktokv.us
+0.0.0.0 mcs-sg.tiktokv.com
+0.0.0.0 mcs-ttp2.tiktokv.us
+0.0.0.0 mcs-va.tiktokv.com
+0.0.0.0 mcs-va-useast2a.tiktokv.com
+0.0.0.0 mon.tiktokv.com
+0.0.0.0 mon.tiktokv.eu
+0.0.0.0 mon-i18n.tiktokv.com
+0.0.0.0 mon-phx.tiktokv.com
+0.0.0.0 mon-ru.tiktokv.com
+0.0.0.0 mon-sg.tiktokv.com
+0.0.0.0 mon-useast2a.tiktokv.com
+0.0.0.0 mon-va.tiktokv.com
+0.0.0.0 mon15-checkout.tiktokv.com
+0.0.0.0 mon15-checkout-alisg.tiktokv.com
+0.0.0.0 mon15-checkout-useast1a.tiktokv.com
+0.0.0.0 mon15-normal.tiktokv.com
+0.0.0.0 mon15-normal-alisg.tiktokv.com
+0.0.0.0 mon15-normal-alisg-checkout.tiktokv.com
+0.0.0.0 mon15-normal-checkout.tiktokv.com
+0.0.0.0 mon15-normal-useast1a.tiktokv.com
+0.0.0.0 mon15-normal-useast1a-checkout.tiktokv.com
+0.0.0.0 mon16-normal.tiktokv.com
+0.0.0.0 mon16-normal-alisg.tiktokv.com
+0.0.0.0 mon16-normal-c-useast1a.tiktokv.com
+0.0.0.0 mon16-normal-c-useast2a.tiktokv.com
+0.0.0.0 mon16-normal-ie.tiktokv.eu
+0.0.0.0 mon16-normal-no1a.tiktokv.eu
+0.0.0.0 mon16-normal-useast1a.tiktokv.com
+0.0.0.0 mon16-normal-useast5.tiktokv.us
+0.0.0.0 mon16-normal-useast8.tiktokv.us
+0.0.0.0 mon16-normal-useastred.tiktokv.eu
+0.0.0.0 mon16-normal-zr-useast1a.tiktokv.com
+0.0.0.0 mon16-platform-ycru.tiktokv.com
+0.0.0.0 mon16-tmp-normal-useast1a.tiktokv.com
+0.0.0.0 mon19-normal.tiktokv.com
+0.0.0.0 mon19-normal-alisg.tiktokv.com
+0.0.0.0 mon19-normal-useast1a.tiktokv.com
+0.0.0.0 mon22-normal.tiktokv.com
+0.0.0.0 mon22-normal-alisg.tiktokv.com
+0.0.0.0 mon22-normal-useast1a.tiktokv.com
+0.0.0.0 mon31-normal.tiktokv.com
+0.0.0.0 mon31-normal-alisg.tiktokv.com
+0.0.0.0 mon31-normal-useast1a.tiktokv.com
+0.0.0.0 mon32-normal.tiktokv.com
+0.0.0.0 mon32-normal-alisg.tiktokv.com
+0.0.0.0 mon32-normal-useast1a.tiktokv.com
+0.0.0.0 monbk.tiktokv.com
+0.0.0.0 mssdk-i18n.tiktokv.com
+0.0.0.0 mssdk-phx.tiktokv.com
+0.0.0.0 mssdk-quic-i18n.tiktokv.com
+0.0.0.0 mssdk-quic-sg.tiktokv.com
+0.0.0.0 mssdk-quic-va.tiktokv.com
+0.0.0.0 mssdk-ru.tiktokv.com
+0.0.0.0 mssdk-sg.tiktokv.com
+0.0.0.0 mssdk-va.tiktokv.com
+0.0.0.0 mssdk-va-useast2a.tiktokv.com
+0.0.0.0 mssdk16-normal.tiktokv.com
+0.0.0.0 mssdk16-normal-alisg.tiktokv.com
+0.0.0.0 mssdk16-normal-ie.tiktokv.eu
+0.0.0.0 mssdk16-normal-no1a.tiktokv.eu
+0.0.0.0 mssdk16-normal-useast1a.tiktokv.com
+0.0.0.0 mssdk16-normal-useast2a.tiktokv.com
+0.0.0.0 mssdk16-normal-useast5.tiktokv.us
+0.0.0.0 mssdk16-normal-useast8.tiktokv.us
+0.0.0.0 mssdk16-normal-useastred.tiktokv.eu
+0.0.0.0 mssdk16-normal-zr-alisg.tiktokv.com
+0.0.0.0 mssdk16-normal-zr-useast1a.tiktokv.com
+0.0.0.0 mssdk19-normal.tiktokv.com
+0.0.0.0 mssdk19-normal-alisg.tiktokv.com
+0.0.0.0 mssdk19-normal-useast1a.tiktokv.com
+0.0.0.0 mssdk19-normal-useast2a.tiktokv.com
+0.0.0.0 mssdk19-normal-zr-alisg.tiktokv.com
+0.0.0.0 mssdk19-normal-zr-useast1a.tiktokv.com
+0.0.0.0 mssdk22-normal.tiktokv.com
+0.0.0.0 mssdk22-normal-alisg.tiktokv.com
+0.0.0.0 mssdk22-normal-useast1a.tiktokv.com
+0.0.0.0 mssdk22-normal-useast2a.tiktokv.com
+0.0.0.0 mssdk22-normal-zr-alisg.tiktokv.com
+0.0.0.0 mssdk22-normal-zr-useast1a.tiktokv.com
+0.0.0.0 mssdk23-normal-zr-alisg.tiktokv.com
+0.0.0.0 mssdk23-normal-zr-useast1a.tiktokv.com
+0.0.0.0 mssdk24-normal.tiktokv.com
+0.0.0.0 mssdk24-normal-alisg.tiktokv.com
+0.0.0.0 mssdk24-normal-useast1a.tiktokv.com
+0.0.0.0 mssdk24-normal-useast2a.tiktokv.com
+0.0.0.0 mssdk31-normal-zr-alisg.tiktokv.com
+0.0.0.0 mssdk32-normal-zr-alisg.tiktokv.com
+0.0.0.0 mssdk32-normal-zr-useast1a.tiktokv.com
+0.0.0.0 rtc-logger.tiktokv.com
+0.0.0.0 rtc-logger.tiktokv.us
+0.0.0.0 rtc-logger-i18n.tiktokv.com
+0.0.0.0 rtc-logger-ie.tiktokv.eu
+0.0.0.0 rtc-logger-ttp2.tiktokv.us
+0.0.0.0 rtc-logger-va.tiktokv.com
+0.0.0.0 rtlog.tiktokv.com
+0.0.0.0 rtlog-i18n.tiktokv.com
+0.0.0.0 rtlog-phx.tiktokv.com
+0.0.0.0 rtlog-ru.tiktokv.com
+0.0.0.0 rtlog-va.tiktokv.com
+0.0.0.0 rtlog-va-useast2a.tiktokv.com
+0.0.0.0 rtlog15-normal.tiktokv.com
+0.0.0.0 rtlog15-normal-alisg.tiktokv.com
+0.0.0.0 rtlog15-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog15-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog16-applog-useast1a.tiktokv.com
+0.0.0.0 rtlog16-applog-useast2a.tiktokv.com
+0.0.0.0 rtlog16-normal.tiktokv.com
+0.0.0.0 rtlog16-normal-alisg.tiktokv.com
+0.0.0.0 rtlog16-normal-ie.tiktokv.eu
+0.0.0.0 rtlog16-normal-ind.tiktokv.com
+0.0.0.0 rtlog16-normal-no1a.tiktokv.eu
+0.0.0.0 rtlog16-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog16-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog16-normal-useast5.tiktokv.us
+0.0.0.0 rtlog16-normal-useast8.tiktokv.us
+0.0.0.0 rtlog16-normal-useastred.tiktokv.eu
+0.0.0.0 rtlog16-tmp-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog17-normal.tiktokv.com
+0.0.0.0 rtlog17-normal-alisg.tiktokv.com
+0.0.0.0 rtlog17-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog17-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog19-applog-useast1a.tiktokv.com
+0.0.0.0 rtlog19-applog-useast2a.tiktokv.com
+0.0.0.0 rtlog19-normal.tiktokv.com
+0.0.0.0 rtlog19-normal-alisg.tiktokv.com
+0.0.0.0 rtlog19-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog19-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog22-applog-useast1a.tiktokv.com
+0.0.0.0 rtlog22-applog-useast2a.tiktokv.com
+0.0.0.0 rtlog22-normal.tiktokv.com
+0.0.0.0 rtlog22-normal-alisg.tiktokv.com
+0.0.0.0 rtlog22-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog22-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog31-normal.tiktokv.com
+0.0.0.0 rtlog31-normal-alisg.tiktokv.com
+0.0.0.0 rtlog31-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog31-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog58-normal.tiktokv.com
+0.0.0.0 rtlog58-normal-alisg.tiktokv.com
+0.0.0.0 rtlog58-normal-useast1a.tiktokv.com
+0.0.0.0 rtlog58-normal-useast2a.tiktokv.com
+0.0.0.0 rtlog58-normal-ycru.tiktokv.com
+0.0.0.0 ad-format.us.tiktokv.com
+0.0.0.0 ad-format-ttp2.us.tiktokv.com
+0.0.0.0 ad-instantpage.us.tiktokv.com
+0.0.0.0 ad-instantpage-ttp2.us.tiktokv.com
+0.0.0.0 location.us.tiktokv.com
+0.0.0.0 location-ttp2.us.tiktokv.com
+0.0.0.0 log.us.tiktokv.com
+0.0.0.0 log16-applog-useast5.us.tiktokv.com
+0.0.0.0 log16-normal-useast8.us.tiktokv.com
+0.0.0.0 log19-applog-useast5.us.tiktokv.com
+0.0.0.0 mcs.us.tiktokv.com
+0.0.0.0 mon.us.tiktokv.com
+0.0.0.0 mon16-normal-useast8.us.tiktokv.com
+0.0.0.0 mon16-platform-useast5.us.tiktokv.com
+0.0.0.0 mssdk.us.tiktokv.com
+0.0.0.0 mssdk16-normal-useast8.us.tiktokv.com
+0.0.0.0 mssdk16-platform-useast5.us.tiktokv.com
+0.0.0.0 rtc-logger.us.tiktokv.com
+0.0.0.0 rtc-logger-ttp2.us.tiktokv.com
+0.0.0.0 rtlog.us.tiktokv.com
+0.0.0.0 rtlog16-applog-useast5.us.tiktokv.com
+0.0.0.0 rtlog16-normal-useast8.us.tiktokv.com
+0.0.0.0 rtlog16-platform-useast5.us.tiktokv.com
+0.0.0.0 rtlog19-applog-useast5.us.tiktokv.com
+0.0.0.0 rtlog19-platform-useast5.us.tiktokv.com
+0.0.0.0 xlog16-normal-useast8.us.tiktokv.com
+0.0.0.0 xlog16-platform-useast5.us.tiktokv.com
+0.0.0.0 xlog.tiktokv.com
+0.0.0.0 xlog-ru.tiktokv.com
+0.0.0.0 xlog-va.tiktokv.com
+0.0.0.0 xlog-va-useast2a.tiktokv.com
+0.0.0.0 xlog16-normal-c-useast1a.tiktokv.com
+0.0.0.0 xlog16-normal-c-useast2a.tiktokv.com
+0.0.0.0 xlog16-normal-no1a.tiktokv.eu
+0.0.0.0 xlog16-normal-useast5.tiktokv.us
+0.0.0.0 xlog16-platform-ycru.tiktokv.com
+0.0.0.0 xlog16-tmp-normal-useast1a.tiktokv.com
+0.0.0.0 log-snssdk.tiktokv-us.com
+0.0.0.0 ads-ie.tiktokw.eu
+0.0.0.0 ads-ttp2.tiktokw.eu
+0.0.0.0 analytics-ie.tiktokw.eu
+0.0.0.0 analytics-ipv6.tiktokw.us
+0.0.0.0 analytics-ttp2.tiktokw.eu
+0.0.0.0 location.tiktokw.us
+0.0.0.0 mcs.tiktokw.us
+0.0.0.0 mcs-ie.tiktokw.eu
+0.0.0.0 mcs-ie2.tiktokw.eu
+0.0.0.0 mcs16-normal-no1a.tiktokw.eu
+0.0.0.0 mcs16-normal-useastred.tiktokw.eu
+0.0.0.0 mssdk.tiktokw.eu
+0.0.0.0 mssdk.tiktokw.us
+0.0.0.0 mssdk16-normal-useastred.tiktokw.eu
