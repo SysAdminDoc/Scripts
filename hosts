@@ -1236,3 +1236,19 @@
 0.0.0.0 pubsub.glia.com
 0.0.0.0 shepherd.avcdn.net
 0.0.0.0 wup-1ca8ebd0.us.v2.we-stats.com
+
+# NextDNS
+0.0.0.0 api.pubfinity.com
+0.0.0.0 api.userway.org
+0.0.0.0 bolt.dropbox.com
+0.0.0.0 catalog.gamepass.com
+0.0.0.0 cdn.dropboxexperiment.com
+0.0.0.0 cdn.livechatinc.com
+0.0.0.0 cdn-cookieyes.com
+0.0.0.0 d.dropbox.com
+0.0.0.0 location-v6.tiktokv.us
+0.0.0.0 mobile.events.data.microsoft.com
+0.0.0.0 prod.adobegenuine.com
+0.0.0.0 pt.dwcdn.net
+0.0.0.0 settings-win.data.microsoft.com
+0.0.0.0 www.gravatar.com
