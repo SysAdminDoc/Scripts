@@ -316,7 +316,6 @@
 0.0.0.0 js.monitor.azure.com
 0.0.0.0 licensing.mp.microsoft.com
 0.0.0.0 live.com
-0.0.0.0 login.microsoftonline.com
 0.0.0.0 msads.net
 0.0.0.0 msecnd.net
 0.0.0.0 msedge.net
