@@ -80,11 +80,9 @@
 0.0.0.0 unagi.amazon.com
 0.0.0.0 unagi-na.amazon.com
 0.0.0.0 d10lpsik1i8c69.cloudfront.net
-
 # Apple
 0.0.0.0 appleid.cdn-apple.com
 0.0.0.0 beacon.shazam.com
-
 # AppsFlyer
 0.0.0.0 5hxazv-cdn-settings.appsflyersdk.com
 0.0.0.0 engagements.appsflyer.com
@@ -99,14 +97,11 @@
 0.0.0.0 reqhfg-inapps.appsflyersdk.com
 0.0.0.0 reqhfg-launches.appsflyersdk.com
 0.0.0.0 yvseee-cdn-settings.appsflyersdk.com
-
 # Cloudflare
-0.0.0.0 a.nel.cloudflare.com
 0.0.0.0 a.nel.cloudflare.com
 0.0.0.0 cloudflare-dns.com
 0.0.0.0 doh.cloudflare-dns.com
 0.0.0.0 mozilla.cloudflare-dns.com
-
 # Comcast / Xfinity (including local network specific to Comcast)
 0.0.0.0 _ldap._tcp.dc._msdcs.hsd1.fl.comcast.net
 0.0.0.0 _ldap._tcp.dc._msdcs.workgroup.hsd1.fl.comcast.net
@@ -125,14 +120,12 @@
 0.0.0.0 ngx-v6.amp-endpoint2.com.hsd1.fl.comcast.net
 0.0.0.0 oashburn1a.turn.livekit.cloud.hsd1.fl.comcast.net
 0.0.0.0 wpad.hsd1.fl.comcast.net
-
 # Datadog
 0.0.0.0 0.datadog.pool.ntp.org
 0.0.0.0 1.datadog.pool.ntp.org
 0.0.0.0 2.datadog.pool.ntp.org
 0.0.0.0 3.datadog.pool.ntp.org
 0.0.0.0 browser-intake-datadoghq.com
-
 # Facebook (Meta)
 0.0.0.0 ads.facebook.com
 0.0.0.0 analytics.facebook.com
@@ -148,7 +141,6 @@
 0.0.0.0 traffic-nts-ip-assoc.xy.fbcdn.net
 0.0.0.0 traffic-nts-ip-assoc.xz.fbcdn.net
 0.0.0.0 whatsapp.net
-
 # Google
 0.0.0.0 ad.doubleclick.net
 0.0.0.0 adclick.g.doubleclick.net
@@ -223,7 +215,6 @@
 0.0.0.0 googleadservices.com
 0.0.0.0 google-analytics.com
 0.0.0.0 google-ohttp-relay-safeBrowse.fastly-edge.com
-0.0.0.0 google-ohttp-relay-safeBrowse.fastly-edge.com
 0.0.0.0 googlesyndication.com
 0.0.0.0 googletagmanager.com
 0.0.0.0 googletagservices.com
@@ -243,7 +234,6 @@
 0.0.0.0 myphonenumbers-pa.googleapis.com
 0.0.0.0 nearbydevices-pa.googleapis.com
 0.0.0.0 nearbysharing-pa.googleapis.com
-0.0.0.0 ogads-pa.clients6.google.com
 0.0.0.0 ogads-pa.clients6.google.com
 0.0.0.0 optimizationguide-pa.googleapis.com
 0.0.0.0 pagead.l.doubleclick.net
@@ -268,19 +258,14 @@
 0.0.0.0 voilatile-pa.googleapis.com
 0.0.0.0 www.google.com.XiaoMiRepeater_V3
 0.0.0.0 www.googleadservices.com
-0.0.0.0 www.googleadservices.com
-0.0.0.0 www.google-analytics.com
 0.0.0.0 www.google-analytics.com
 0.0.0.0 www.googleoptimize.com
-0.0.0.0 www.googletagmanager.com
 0.0.0.0 www.googletagmanager.com
 0.0.0.0 www.googletagservices.com
 0.0.0.0 www3.doubleclick.net
 0.0.0.0 www-google-analytics.l.google.com
 0.0.0.0 xgapromomanager-pa.googleapis.com
 0.0.0.0 analytics.google.com
-0.0.0.0 id.google.com
-
 # HubSpot
 0.0.0.0 js.hubspotfeedback.com
 0.0.0.0 send.hsbrowserreports.com
@@ -289,10 +274,8 @@
 0.0.0.0 js.hs-banner.com
 0.0.0.0 js.hscollectedforms.net
 0.0.0.0 track.hubspot.com
-
 # Microsoft (including Xbox, Skype, Azure, Office, Bing, SwiftKey, GitHub)
 0.0.0.0 applicationinsights.io
-0.0.0.0 arc.msn.com
 0.0.0.0 arc.msn.com
 0.0.0.0 azure.com
 0.0.0.0 azureedge.net
@@ -310,7 +293,6 @@
 0.0.0.0 default.exp-tas.com
 0.0.0.0 dns.msftncsi.com
 0.0.0.0 ecs.office.com
-0.0.0.0 ecs.office.com
 0.0.0.0 f.c2r.ts.cdn.office.net
 0.0.0.0 in.appcenter.ms
 0.0.0.0 js.monitor.azure.com
@@ -327,7 +309,6 @@
 0.0.0.0 public.onecdn.static.microsoft
 0.0.0.0 res.public.onecdn.static.microsoft
 0.0.0.0 services.bingapis.com
-0.0.0.0 settings-win.data.microsoft.com
 0.0.0.0 settings-win.data.microsoft.com
 0.0.0.0 sk-connect.api.swiftkey.com
 0.0.0.0 skype.com
@@ -361,14 +342,12 @@
 0.0.0.0 uhf.microsoft.com
 0.0.0.0 v10.events.data.microsoft.com
 0.0.0.0 watson.events.data.microsoft.com
-
 # Mozilla / Firefox
 0.0.0.0 accounts.firefox.com
 0.0.0.0 api.accounts.firefox.com
 0.0.0.0 content-signature-2.cdn.mozilla.net
 0.0.0.0 detectportal.firefox.com
 0.0.0.0 doh.waterfox.net
-0.0.0.0 mozilla.cloudflare-dns.com
 0.0.0.0 mozilla.net
 0.0.0.0 mozilla.org
 0.0.0.0 profile.accounts.firefox.com
@@ -376,7 +355,6 @@
 0.0.0.0 token.services.mozilla.com
 0.0.0.0 versioncheck.addons.mozilla.org
 0.0.0.0 www.mozilla.org
-
 # PayPal (including Braintree)
 0.0.0.0 api.braintreegateway.com
 0.0.0.0 b.stats.paypal.com
@@ -384,7 +362,6 @@
 0.0.0.0 client-analytics.braintreegateway.com
 0.0.0.0 lvs.stats.paypal.com
 0.0.0.0 slc.stats.paypal.com
-
 # Samsung (including Bixby, Knox, Tizen)
 0.0.0.0 samsungadhub.com
 0.0.0.0 bixbyllm.com
@@ -407,7 +384,6 @@
 0.0.0.0 samsung.com
 0.0.0.0 samsung.com.cn # This specific TLD variant of samsung.com for China.
 0.0.0.0 samsungacr.com
-0.0.0.0 samsungadhub.com
 0.0.0.0 samsungads.com
 0.0.0.0 samsungallstore.com
 0.0.0.0 samsungapps.com
@@ -451,7 +427,6 @@
 0.0.0.0 wu2z-api.samsungcloud.com
 0.0.0.0 www.samsung.com
 0.0.0.0 www.samsungsds.com
-
 # TikTok / ByteDance (including Snssdk, Byteoversea)
 0.0.0.0 12691274.ads.tiktok.com
 0.0.0.0 12691274.ads-service.tiktok.com
@@ -546,7 +521,6 @@
 0.0.0.0 location-ttp2.us.tiktokv.com
 0.0.0.0 location-v6.tiktokv.com
 0.0.0.0 location-v6.tiktokv.eu
-0.0.0.0 location-v6.tiktokv.us
 0.0.0.0 location-v6.tiktokv.us
 0.0.0.0 location-v6-i18n.tiktokv.com
 0.0.0.0 location-v6-ru.tiktokv.com
@@ -871,7 +845,6 @@
 0.0.0.0 xlog-va.tiktokv.com
 0.0.0.0 xlog-va-useast2a.byteoversea.com
 0.0.0.0 xlog-va-useast2a.tiktokv.com
-
 # Twitter (X)
 0.0.0.0 ads.twitter.com
 0.0.0.0 ads-api.x.com
@@ -879,12 +852,10 @@
 0.0.0.0 static.ads-twitter.com
 0.0.0.0 syndication.twitter.com
 0.0.0.0 ton.twimg.com
-
 # Unity Technologies
 0.0.0.0 configv2.unityads.unity3d.com
 0.0.0.0 thind.unityads.unity3d.com
 0.0.0.0 webview.unityads.unity3d.com
-
 # Ad Tech (General & Smaller Providers)
 0.0.0.0 aaxads.com
 0.0.0.0 ad-delivery.net
@@ -941,7 +912,6 @@
 0.0.0.0 view.adjust.com
 0.0.0.0 s2s.adjust.com
 0.0.0.0 tm-sdk.platinumai.net
-
 # Analytics & Tracking (General)
 0.0.0.0 api.amplitude.com
 0.0.0.0 api.mixpanel.com
@@ -973,12 +943,10 @@
 0.0.0.0 stats.zoogletools.net
 0.0.0.0 zn9nevpuzoe1vllx8-extraspacecx.siteintercept.qualtrics.com
 0.0.0.0 settings.luckyorange.net
-
 # Content Delivery Networks (CDN - General)
 0.0.0.0 creditkarmacdn-a.akamaihd.net
 0.0.0.0 hakurei.cdnbo.org
 0.0.0.0 polyfill.io
-
 # Developer Tools & Services (General)
 0.0.0.0 api.segment.io
 0.0.0.0 cdn.segment.com
@@ -992,27 +960,22 @@
 0.0.0.0 web-security-reports.services.atlassian.com
 0.0.0.0 xp.atlassian.com
 0.0.0.0 use1-turn.fpjs.io
-
 # E-commerce & Payments (Other than major dedicated sections)
 0.0.0.0 api.revenuecat.com
 0.0.0.0 q.stripe.com
 0.0.0.0 thm12.visa.com
-
 # Fraud Prevention & Security (General)
 0.0.0.0 api3.siftscience.com
 0.0.0.0 c.riskified.com
 0.0.0.0 e44177b6b805.cdn4.forter.com
 0.0.0.0 imgs.signifyd.com
 0.0.0.0 w2txo5aao5mglvdas2hwgijf5qu4rtcwdvtncij39654214ebf99a54dsac.d.aa.online-metrix.net
-
 # Gaming
 0.0.0.0 digital.acrpoker.site
-
 # Location Services (General)
 0.0.0.0 events.mapbox.com
 0.0.0.0 sdk-configuration.gimbal.com
 0.0.0.0 sdk-info.gimbal.com
-
 # Privacy & Consent Management
 0.0.0.0 api.consentdesk.com
 0.0.0.0 cdn.cookielaw.org
@@ -1021,7 +984,6 @@
 0.0.0.0 geolocation.onetrust.com
 0.0.0.0 privacyportal-au.onetrust.com
 0.0.0.0 sdk.privacy-center.org
-
 # Productivity & Office Tools (Other than major dedicated sections)
 0.0.0.0 account.wps.com
 0.0.0.0 ai.wps.com
@@ -1032,14 +994,12 @@
 0.0.0.0 params.wps.com
 0.0.0.0 store.wps.com
 0.0.0.0 wps.com
-
 # Social & Communication (General / Other)
 0.0.0.0 alb.reddit.com
 0.0.0.0 e.reddit.com
 0.0.0.0 w3-reporting.reddit.com
 0.0.0.0 w3-reporting-nel.reddit.com
 0.0.0.0 widget.intercom.io
-
 # Streaming & Media (General / Other)
 0.0.0.0 adstudio-assets.scdn.co
 0.0.0.0 assets.lunalabs.io
@@ -1081,10 +1041,8 @@
 0.0.0.0 ichnaea-web.netflix.com
 0.0.0.0 newjams-images.scdn.co
 0.0.0.0 watch.sociofyme.com
-
 # URL Shorteners / Redirectors / Link Services
 0.0.0.0 i.sng.link
-
 # Web Browsers & Extensions (Specific Components)
 0.0.0.0 a.tampermonkey.net
 0.0.0.0 app.adaway.org
@@ -1096,7 +1054,6 @@
 0.0.0.0 redirector.brave.com
 0.0.0.0 usage-ping.brave.com
 0.0.0.0 variations.brave.com
-
 # Miscellaneous Services / Utilities
 0.0.0.0 api.arity.com
 0.0.0.0 api.apptentive.com
@@ -1199,7 +1156,6 @@
 0.0.0.0 app.picreel.com
 0.0.0.0 assets.pcrl.co
 0.0.0.0 www.clickcease.com
-
 # Potentially Unwanted / Suspicious / Obscure
 0.0.0.0 btyklhjjasgfm.club
 0.0.0.0 chatwithjerrilee.club
@@ -1221,7 +1177,6 @@
 0.0.0.0 sdg22.com
 0.0.0.0 www.tcrzhmdjeswj.com
 0.0.0.0 www.tdspsden.com
-
 # Uncategorized / Unknown Association
 0.0.0.0 analytics.avcdn.net
 0.0.0.0 adsassets.waze.com
@@ -1233,23 +1188,12 @@
 0.0.0.0 pubsub.glia.com
 0.0.0.0 shepherd.avcdn.net
 0.0.0.0 wup-1ca8ebd0.us.v2.we-stats.com
-
 # NextDNS
-0.0.0.0 api.pubfinity.com
 0.0.0.0 api.userway.org
-0.0.0.0 bolt.dropbox.com
-0.0.0.0 catalog.gamepass.com
-0.0.0.0 cdn.dropboxexperiment.com
 0.0.0.0 cdn.livechatinc.com
 0.0.0.0 cdn-cookieyes.com
-0.0.0.0 d.dropbox.com
-0.0.0.0 location-v6.tiktokv.us
-0.0.0.0 mobile.events.data.microsoft.com
-0.0.0.0 prod.adobegenuine.com
 0.0.0.0 pt.dwcdn.net
-0.0.0.0 settings-win.data.microsoft.com
 0.0.0.0 www.gravatar.com
-0.0.0.0 prod.adobegenuine.com
 0.0.0.0 referrer.disqus.com
 0.0.0.0 platform-api.sharethis.com
 0.0.0.0 cdn.viously.com
@@ -1269,7 +1213,6 @@
 0.0.0.0 widgets.automizely.com
 0.0.0.0 sdks.automizely.com
 0.0.0.0 staticw2.yotpo.com
-0.0.0.0 doubleclick.net
 0.0.0.0 b-graph.facebook.com
 0.0.0.0 b-graph-fallback.facebook.com
 0.0.0.0 browser.events.data.msn.com
@@ -1285,7 +1228,6 @@
 0.0.0.0 emotivecdn.io
 0.0.0.0 error-analytics-production.shopifysvc.com
 0.0.0.0 files.catbox.moe
-0.0.0.0 firebaseinstallations.googleapis.com
 0.0.0.0 freyr.futurecdn.net
 0.0.0.0 go.ezodn.com
 0.0.0.0 gravatar.com
@@ -1294,20 +1236,17 @@
 0.0.0.0 launcher.spot.im
 0.0.0.0 li.protechts.net
 0.0.0.0 live.primis.tech
-0.0.0.0 location-v6-ttp2.tiktokv.us
 0.0.0.0 loox.io
 0.0.0.0 mon16-normal-useast8.tiktokv.us
 0.0.0.0 noa.yahoo.com
 0.0.0.0 opus.analytics.yahoo.com
 0.0.0.0 piwik.openmediavault.org
 0.0.0.0 platform.linkedin.com
-0.0.0.0 prod.adobegenuine.com
 0.0.0.0 push.services.mozilla.com
 0.0.0.0 res.lassomarketing.io
 0.0.0.0 s.pinimg.com
 0.0.0.0 sa.agechecker.net
 0.0.0.0 srtb.msn.com
-0.0.0.0 static.doubleclick.net
 0.0.0.0 static.klaviyo.com
 0.0.0.0 static.landbot.io
 0.0.0.0 web-analytics-receiver.prod.rechargeapps.com
@@ -1316,4 +1255,52 @@
 0.0.0.0 wisepops.net
 0.0.0.0 www.lightboxcdn.com
 0.0.0.0 www.statcounter.com
-
+0.0.0.0 account.samsung.com
+0.0.0.0 accounts.tampermonkey.net
+0.0.0.0 aka-dn.gw.samsungapps.com
+0.0.0.0 amp.shazam.com
+0.0.0.0 aquapac.net
+0.0.0.0 d1564fddzjmdj5.cloudfront.net
+0.0.0.0 d1f0esyb34c1g2.cloudfront.net
+0.0.0.0 d1nruqhae353qc.cloudfront.net
+0.0.0.0 d2lbyuknrhysf9.cloudfront.net
+0.0.0.0 e361c820-dnsotls-ds.metric.gstatic.com
+0.0.0.0 edge.steam-dns.top.comcast.net
+0.0.0.0 f1d07934-dnsotls-ds.metric.gstatic.com
+0.0.0.0 f5c7e426-dnsotls-ds.metric.gstatic.com
+0.0.0.0 frontier-ttp2.tiktokv.us
+0.0.0.0 gmp.samsungapps.com
+0.0.0.0 gtg.samsungapps.com
+0.0.0.0 img.samsungapps.com
+0.0.0.0 kvrjkv-dnsotls-ds.metric.gstatic.com
+0.0.0.0 mrodevicemgr.officeapps.live.com
+0.0.0.0 msedge.api.cdp.microsoft.com
+0.0.0.0 na1e.services.adobe.com
+0.0.0.0 oqiffvzlcdheksh.hsd1.fl.comcast.net
+0.0.0.0 outlook-sdf.office.com
+0.0.0.0 profile.that.hsd1.fl.comcast.net
+0.0.0.0 safebrowsing.brave.com
+0.0.0.0 safebrowsing.googleapis.com
+0.0.0.0 scbeok-dnsotls-ds.metric.gstatic.com
+0.0.0.0 searchnotifications-pa.googleapis.com
+0.0.0.0 styles.redditmedia.com
+0.0.0.0 suggestqueries.google.com
+0.0.0.0 suggestqueries-clients6.youtube.com
+0.0.0.0 ureca.samsungapps.com
+0.0.0.0 us-auth2.samsungosp.com
+0.0.0.0 cdn.piano.io
+0.0.0.0 cdn.zg-api.com
+0.0.0.0 tracking.ttleadmail.com
+0.0.0.0 static.cloudflareinsights.com
+0.0.0.0 beacon.riskified.com
+0.0.0.0 o17585.ingest.us.sentry.io
+0.0.0.0 cdn-scripts.signifyd.com
+0.0.0.0 hexagon-analytics.com
+0.0.0.0 sspapi-prd.samsungrs.com
+0.0.0.0 gocart-web-prod-ue1-alb-1461435473.us-east-1.elb.amazonaws.com
+0.0.0.0 binisoft.org
+0.0.0.0 pingback.giphy.com
+0.0.0.0 google-ohttp-relay-safebrowsing.fastly-edge.com
+0.0.0.0 cdn1.judge.me
+0.0.0.0 pro.ip-api.com
+0.0.0.0 stats.fluorescent.co
