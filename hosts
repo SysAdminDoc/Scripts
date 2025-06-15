@@ -845,7 +845,6 @@
 0.0.0.0 business-api.tiktok.com
 0.0.0.0 bz6sri-dnsotls-ds.metric.gstatic.com
 0.0.0.0 c.bing.com
-0.0.0.0 c.live.com
 0.0.0.0 c.msn.com
 0.0.0.0 c.paypal.com
 0.0.0.0 c.riskified.com
@@ -1003,7 +1002,6 @@
 0.0.0.0 fonts.mailerlite.com
 0.0.0.0 footprints-pa.googleapis.com
 0.0.0.0 forms-na1.hsforms.com
-0.0.0.0 fpt.live.com
 0.0.0.0 fpt.microsoft.com
 0.0.0.0 fqqxbd-dnsotls-ds.metric.gstatic.com
 0.0.0.0 free.flightradar24.com
@@ -1199,7 +1197,6 @@
 0.0.0.0 mp.imgur.com
 0.0.0.0 mparticle.weather.com
 0.0.0.0 mps.cnbc.com
-0.0.0.0 mrodevicemgr.officeapps.live.com
 0.0.0.0 ms3uso-dnsotls-ds.metric.gstatic.com
 0.0.0.0 mscom.demdex.net
 0.0.0.0 msecnd.net
@@ -1231,11 +1228,6 @@
 0.0.0.0 ntp.msn.com
 0.0.0.0 oashburn1a.turn.livekit.cloud.hsd1.fl.comcast.net
 0.0.0.0 oauth.platform.intuit.com
-0.0.0.0 odc.officeapps.live.com
-0.0.0.0 office.com
-0.0.0.0 officeapps.live.com
-0.0.0.0 officecdn.microsoft.com
-0.0.0.0 officeclient.microsoft.com
 0.0.0.0 ogads-pa.clients6.google.com
 0.0.0.0 open.snssdk.com
 0.0.0.0 optimizationguide-pa.googleapis.com
@@ -1244,7 +1236,6 @@
 0.0.0.0 orsplc.di.runestone.samsung.com
 0.0.0.0 ospserver.net
 0.0.0.0 otheve.beacon.qq.com
-0.0.0.0 outlook-sdf.office.com
 0.0.0.0 oveuls-cdn-settings.appsflyersdk.com
 0.0.0.0 oveuls-conversions.appsflyersdk.com
 0.0.0.0 oveuls-launches.appsflyersdk.com
