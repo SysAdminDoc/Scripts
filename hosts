@@ -3126,3 +3126,36 @@
 0.0.0.0 location-v6-ttp2.tiktokv.us
 0.0.0.0 aps_mobile_client_config.json.hsd1.fl.comcast.net
 0.0.0.0 htlbid.com
+
+
+# Blocked domains - updated June 18, 2025
+
+0.0.0.0 ae01.alicdn.com
+0.0.0.0 ae04.alicdn.com
+0.0.0.0 ae.mmstat.com
+0.0.0.0 aeis.alicdn.com
+0.0.0.0 api-alb-us-carolina-1.datadome.co
+0.0.0.0 api-js.datadome.co
+0.0.0.0 aps_mobile_client_config.json.hsd1.fl.comcast.net
+0.0.0.0 assets.alicdn.com
+0.0.0.0 g.alicdn.com
+0.0.0.0 htlbid.com
+0.0.0.0 ipcigieikmfhw.website
+0.0.0.0 is.alicdn.com
+0.0.0.0 js.datadome.co
+0.0.0.0 location-v6-ttp2.tiktokv.us
+0.0.0.0 moderate.cleantalk.org
+0.0.0.0 mt.9gag.com
+0.0.0.0 my.toruftuiov.com
+0.0.0.0 n3smqczqmnxwq4wpb.ay.delivery
+0.0.0.0 nemppa.com
+0.0.0.0 o.alicdn.com
+0.0.0.0 privacy-api.9gag.com
+0.0.0.0 push.chance.surf
+0.0.0.0 q.nemppa.com
+0.0.0.0 s.click.aliexpress.com
+0.0.0.0 static.searchstax.com
+0.0.0.0 to.rezply.com
+0.0.0.0 usrpubtrk.com
+0.0.0.0 widget.flowxo.com
+0.0.0.0 www.bobgames-prolister.com
