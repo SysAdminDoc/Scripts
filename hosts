@@ -614,8 +614,6 @@
 0.0.0.0 bing.com
 0.0.0.0 bingapis.com
 0.0.0.0 binisoft.org
-0.0.0.0 bit.ly
-0.0.0.0 bitwarden.net
 0.0.0.0 bixbyllm.com
 0.0.0.0 blacklist.tampermonkey.net
 0.0.0.0 blah.hsd1.fl.comcast.net
@@ -2953,7 +2951,6 @@
 0.0.0.0 t97.nudevista.com
 0.0.0.0 t98.nudevista.com
 0.0.0.0 t99.nudevista.com
-0.0.0.0 taboola.com
 0.0.0.0 tag.bouncex.net
 0.0.0.0 tag.digitaltarget.ru
 0.0.0.0 tag.getdrip.com
@@ -3092,7 +3089,6 @@
 0.0.0.0 tyal9pmsv23m.n4.adsco.re
 0.0.0.0 tyal9pmsv23m.s4.adsco.re
 0.0.0.0 tynt.com
-0.0.0.0 typekit.net
 0.0.0.0 tzegilo.com
 0.0.0.0 u.4dex.io
 0.0.0.0 u.openx.net
@@ -3148,8 +3144,6 @@
 0.0.0.0 us-auth2.samsungosp.com
 0.0.0.0 us-central1-todesktop-prod1.cloudfunctions.net
 0.0.0.0 us-content.vergic.com
-0.0.0.0 use.fontawesome.com
-0.0.0.0 use.typekit.net
 0.0.0.0 use1-ads-proxy-temp-prebid-v3.yieldmo.com
 0.0.0.0 use1-turn.fpjs.io
 0.0.0.0 us-east-1.prod.service.minerva.devices.a2z.com
@@ -3179,7 +3173,6 @@
 0.0.0.0 v2.pixel.nukp.data.newscorp.com
 0.0.0.0 va.v.liveperson.net
 0.0.0.0 vadbpmwycdc.xyz
-0.0.0.0 vanced.me
 0.0.0.0 variations.brave.com
 0.0.0.0 vas.samsungapps.com
 0.0.0.0 vas-hl-x.snssdk.com
@@ -3294,7 +3287,6 @@
 0.0.0.0 www.googleoptimize.com
 0.0.0.0 www.googletagmanager.com
 0.0.0.0 www.googletagservices.com
-0.0.0.0 www.gravatar.com
 0.0.0.0 www.honestbleeps.com
 0.0.0.0 www.hugedomains.com
 0.0.0.0 www.i.cdn.cnn.com
@@ -3307,7 +3299,6 @@
 0.0.0.0 www.lookae.com
 0.0.0.0 www.luckyorange.com
 0.0.0.0 www.magnetdl.com
-0.0.0.0 www.mozilla.org
 0.0.0.0 www.msftconnecttest.com
 0.0.0.0 www.mypwwydxnmwwtv.com
 0.0.0.0 www.newrelic.com
@@ -3337,7 +3328,6 @@
 0.0.0.0 www-alv.google-analytics.com
 0.0.0.0 www-google-analytics.l.google.com
 0.0.0.0 www-prebid.dianomi.com
-0.0.0.0 w-x.co
 0.0.0.0 wzq505.infusionsoft.app
 0.0.0.0 x.adroll.com
 0.0.0.0 x.akamaiedge.net
