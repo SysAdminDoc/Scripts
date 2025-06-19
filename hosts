@@ -114,6 +114,7 @@
 0.0.0.0 ad.doubleclick.net
 0.0.0.0 ad.mail.ru
 0.0.0.0 ad.particlenews.com
+0.0.0.0 ad.servetag.com
 0.0.0.0 ad.tiktok.tv
 0.0.0.0 ad.tiktokv.com
 0.0.0.0 ad.tiktokv.us
@@ -242,6 +243,7 @@
 0.0.0.0 advertising.amazon.com
 0.0.0.0 advice.pgs.io
 0.0.0.0 adx.com.ru
+0.0.0.0 adyywnehmvdtu.hsd1.fl.comcast.net
 0.0.0.0 ae.mmstat.com
 0.0.0.0 ae01.alicdn.com
 0.0.0.0 ae04.alicdn.com
@@ -305,6 +307,7 @@
 0.0.0.0 analytics-ttp2.us.tiktok.com
 0.0.0.0 analytics-useast2a.tiktok.com
 0.0.0.0 analytics-v6.tiktok.com
+0.0.0.0 android.apis.google.com.hsd1.fl.comcast.net
 0.0.0.0 android.bugly.qq.com
 0.0.0.0 android-context-data.googleapis.com
 0.0.0.0 androidpay-users-pa.googleapis.com
@@ -1216,6 +1219,7 @@
 0.0.0.0 gbc0.us5.us.criteo.com
 0.0.0.0 gbc7.us5.us.criteo.com
 0.0.0.0 gcos.adobe.io
+0.0.0.0 gdlolnfc.hsd1.fl.comcast.net
 0.0.0.0 gdpr.apps.isenselabs.com
 0.0.0.0 gdprcdn.b-cdn.net
 0.0.0.0 gdsapi.cnbc.com
@@ -1470,6 +1474,7 @@
 0.0.0.0 kgutiokknx.com
 0.0.0.0 kimberlite.io
 0.0.0.0 kinesis.us-east-1.amazonaws.com
+0.0.0.0 knkvixlevwpdc.website
 0.0.0.0 knotch.com
 0.0.0.0 knotch.it
 0.0.0.0 knotch-cdn.com
@@ -1718,6 +1723,7 @@
 0.0.0.0 mcs-i18n.tiktok.com
 0.0.0.0 mcs-ie.tiktokw.eu
 0.0.0.0 mcs-ie2.tiktokw.eu
+0.0.0.0 mcs-sg.tiktok.com
 0.0.0.0 mcs-sg.tiktokv.com
 0.0.0.0 mcs-tiktok.byteoversea.net
 0.0.0.0 mcs-ttp2.tiktokv.us
@@ -1844,6 +1850,7 @@
 0.0.0.0 msn.com
 0.0.0.0 mssdk16-normal-useast8.tiktokv.us
 0.0.0.0 mt.9gag.com
+0.0.0.0 mtalk.google.com.hsd1.fl.comcast.net
 0.0.0.0 mv.outbrain.com
 0.0.0.0 mxn9nw-dnsotls-ds.metric.gstatic.com
 0.0.0.0 mxpnl.com
@@ -3012,6 +3019,7 @@
 0.0.0.0 www.datadoghq-browser-agent.com
 0.0.0.0 www.deezer.com.hsd1.fl.comcast.net
 0.0.0.0 www.dianomi.com
+0.0.0.0 www.doubleclick.net
 0.0.0.0 www.glancecdn.net
 0.0.0.0 www.google.com.XiaoMiRepeater_V3
 0.0.0.0 www.googleadservices.com
@@ -3033,6 +3041,7 @@
 0.0.0.0 www.mozilla.org
 0.0.0.0 www.msftconnecttest.com
 0.0.0.0 www.mypwwydxnmwwtv.com
+0.0.0.0 www.newrelic.com
 0.0.0.0 www.newsbreak.com
 0.0.0.0 www.npttech.com
 0.0.0.0 www.ojrq.net
@@ -3087,6 +3096,7 @@
 0.0.0.0 xlog-va.tiktokv.com
 0.0.0.0 xlog-va-useast2a.byteoversea.com
 0.0.0.0 xlog-va-useast2a.tiktokv.com
+0.0.0.0 xoojebxoyzves.online
 0.0.0.0 xp.apple.com
 0.0.0.0 xp.atlassian.com
 0.0.0.0 y.one.impact-ad.jp
@@ -3122,16 +3132,37 @@
 0.0.0.0 zoominfo.com
 0.0.0.0 zqtk.net
 0.0.0.0 zype.com
-0.0.0.0 mcs-sg.tiktok.com
 
 
-0.0.0.0 acdcdn.com
-0.0.0.0 cloudflareinsights.com
-0.0.0.0 intrustedzone.site
-0.0.0.0 knkvixlevwpdc.website
-0.0.0.0 usrpubtrk.com
-0.0.0.0 xoojebxoyzves.online
-0.0.0.0 youradexchange.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
