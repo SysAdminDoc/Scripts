@@ -13,6 +13,7 @@
 0.0.0.0 1208818836.rsc.cdn77.org
 0.0.0.0 12ezo5v60.com
 0.0.0.0 1337x.onlyvpn.site
+0.0.0.0 1583888300.rsc.cdn77.org
 0.0.0.0 1605158521.rsc.cdn77.org
 0.0.0.0 1750203343593bea42ec87e510e956742da9ac89ca2d0eba40ba81ef.trk.sensic.net
 0.0.0.0 1750204245725f5b68ea24342a753f7d5d84c250daafde7163be9c14.trk.sensic.net
@@ -142,6 +143,7 @@
 0.0.0.0 adformnet.akadns.net
 0.0.0.0 adfox.yandex.ru
 0.0.0.0 adfs.googlesyndication.com
+0.0.0.0 adfstat.yandex.ru
 0.0.0.0 adgcp.tpmn.co.kr
 0.0.0.0 adgotest.cn-guangzhou.log.aliyuncs.com
 0.0.0.0 ad-i18n.tiktokv.com
@@ -177,6 +179,7 @@
 0.0.0.0 ads.inmobi.com
 0.0.0.0 ads.linkedin.com
 0.0.0.0 ads.mozilla.org
+0.0.0.0 ads.pinterest.com
 0.0.0.0 ads.pubmatic.com
 0.0.0.0 ads.reddit.com
 0.0.0.0 ads.scored.co
@@ -319,6 +322,7 @@
 0.0.0.0 analytics.pandadoc.com
 0.0.0.0 analytics.pinterest.com
 0.0.0.0 analytics.pointdrive.linkedin.com
+0.0.0.0 analytics.query.yahoo.com
 0.0.0.0 analytics.s3.amazonaws.com
 0.0.0.0 analytics.samsungknox.com
 0.0.0.0 analytics.snssdk.com
@@ -452,6 +456,7 @@
 0.0.0.0 applog.snssdk.com
 0.0.0.0 app-measurement.com
 0.0.0.0 appmetrica.yandex.com
+0.0.0.0 appmetrica.yandex.ru
 0.0.0.0 appnext.com
 0.0.0.0 appsettings.apalon.com.hsd1.fl.comcast.net
 0.0.0.0 appsflyer.com
@@ -554,6 +559,8 @@
 0.0.0.0 b-cdn.net
 0.0.0.0 bcdn-god.we-stats.com
 0.0.0.0 bcp.crwdcntrl.net
+0.0.0.0 bdapi-ads.realmemobile.com
+0.0.0.0 bdapi-in-ads.realmemobile.com
 0.0.0.0 bds.snssdk.com
 0.0.0.0 bea4.v.fwmrm.net
 0.0.0.0 beacon.adelphic.com
@@ -685,11 +692,13 @@
 0.0.0.0 cdn.doubleverify.com
 0.0.0.0 cdn.dropboxexperiment.com
 0.0.0.0 cdn.flipboard.com
+0.0.0.0 cdn.fluidplayer.com
 0.0.0.0 cdn.gusto.com
 0.0.0.0 cdn.hadronid.net
 0.0.0.0 cdn.hubvisor.io
 0.0.0.0 cdn.indexww.com
 0.0.0.0 cdn.inspectlet.com
+0.0.0.0 cdn.iubenda.com
 0.0.0.0 cdn.js7k.com
 0.0.0.0 cdn.ketchjs.com
 0.0.0.0 cdn.livechatinc.com
@@ -792,6 +801,7 @@
 0.0.0.0 chidc2.outbrain.org
 0.0.0.0 chimpstatic.com
 0.0.0.0 ch-vip001.taboola.com
+0.0.0.0 ck.ads.oppomobile.com
 0.0.0.0 ck.silvermob.com
 0.0.0.0 cl.qualaroo.com
 0.0.0.0 clarity.ms
@@ -995,6 +1005,7 @@
 0.0.0.0 d3888oxgux3fey.cloudfront.net
 0.0.0.0 d3agakyjgjv5i8.cloudfront.net
 0.0.0.0 d3c5desr9rmu7j.cloudfront.net
+0.0.0.0 d3cod80thn7qnd.cloudfront.net
 0.0.0.0 d3v8xvgnldnqvf.cloudfront.net
 0.0.0.0 d5a14693-dnsotls-ds.metric.gstatic.com
 0.0.0.0 d5bhw1ea5nk9r.cloudfront.net
@@ -3295,6 +3306,63 @@
 0.0.0.0 zoominfo.com
 0.0.0.0 zqtk.net
 0.0.0.0 zype.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
