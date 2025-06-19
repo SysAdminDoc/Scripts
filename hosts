@@ -3159,3 +3159,24 @@
 0.0.0.0 usrpubtrk.com
 0.0.0.0 widget.flowxo.com
 0.0.0.0 www.bobgames-prolister.com
+# Blocked domains - updated June 18, 2025 (batch 3)
+
+0.0.0.0 adgotest.cn-guangzhou.log.aliyuncs.com
+0.0.0.0 api16-access-ttp.tiktokpangle.us
+0.0.0.0 api.bidmachine.io
+0.0.0.0 appsettings.apalon.com.hsd1.fl.comcast.net
+0.0.0.0 aps_mobile_client_config.json.hsd1.fl.comcast.net
+0.0.0.0 b-graph.facebook.com
+0.0.0.0 collector.github.com
+0.0.0.0 detectportal.firefox.com
+0.0.0.0 mqtt-mini.facebook.com
+0.0.0.0 o309708.ingest.sentry.io
+0.0.0.0 play-apps-features.googleusercontent.com
+0.0.0.0 play.samsungcloud.com
+0.0.0.0 push.chance.surf
+0.0.0.0 us-auth2.samsungosp.com
+0.0.0.0 uxh52u.cdn-settings.appsflyersdk.com
+0.0.0.0 voilatile-pa.googleapis.com
+0.0.0.0 x.blueduckredapple.com
+0.0.0.0 x.everestop.io
+0.0.0.0 x.thecatmachine.com
