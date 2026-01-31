@@ -1,7 +1,7 @@
 # Windows 11 Complete Debloat Script
 
 **Version:** 2.0  
-**Author:** Maven Imaging  
+**Author:** SysAdminDoc
 **Last Updated:** January 2025  
 **Lines of Code:** 2,469  
 **Compatibility:** Windows 10 (1903+) / Windows 11
