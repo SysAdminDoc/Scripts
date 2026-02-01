@@ -2,18 +2,18 @@
 
 <#
 .SYNOPSIS
-    Windows Registry & Settings Restoration Script - Comprehensive Edition v3.1
-    Restores Windows to factory default settings by reversing debloat scripts,
+    Windows Restore Tool v4.2
+    Restores Windows to factory default settings after debloat scripts,
     privacy.sexy tweaks, group policy modifications, and registry changes.
 
 .DESCRIPTION
-    This script comprehensively restores Windows settings to their default values.
-    Includes reversals for common privacy.sexy configurations.
+    One-click tool to fix Windows PCs broken by debloat/privacy scripts.
+    Features: pre-scan diagnostics, preset fix modes, and detailed reporting.
     Run with Administrator privileges. Creates a detailed log on your Desktop.
 
 .NOTES
     Author: Maven Imaging IT
-    Version: 3.1.0
+    Version: 4.2.0
     Requires: Administrator privileges
 #>
 
@@ -21,18 +21,29 @@
 # CONFIGURATION
 # ============================================================================
 
-$script:Version = "3.1.0"
+$script:Version = "4.2.0"
 $script:LogPath = "$env:USERPROFILE\Desktop\WindowsRestore_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 $script:ChangesCount = 0
 $script:ErrorsCount = 0
+$script:SkippedCount = 0
+# Per-category result tracking: key = category name, value = @{Status; Details; Changed; Errors}
+$script:CategoryResults = [ordered]@{}
+$script:CurrentCategory = ""
+
 
 # ============================================================================
-# SELF-ELEVATION
+# SELF-ELEVATION (Forces Windows PowerShell 5.1 for WPF/Appx compatibility)
 # ============================================================================
 
+# PowerShell 7+ has broken Appx module and WPF quirks - force Windows PowerShell 5.1
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    $ps5 = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
+    Start-Process $ps5 -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    exit
+}
+# Self-elevate if not admin
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    Start-Process powershell -Verb RunAs -ArgumentList $arguments
+    Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
     exit
 }
 
@@ -46,7 +57,20 @@ Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName System.Windows.Forms
 
 # ============================================================================
-# LOGGING
+# HELPERS
+# ============================================================================
+
+# Safe wrapper for Get-AppxPackage (never throws, returns $null on failure)
+function Get-AppxPackageSafe {
+    param([string]$Name, [switch]$AllUsers)
+    try {
+        if ($AllUsers) { return @(Get-AppxPackage -AllUsers $Name -EA Stop) }
+        else { return (Get-AppxPackage $Name -EA Stop) }
+    } catch { return $null }
+}
+
+# ============================================================================
+# LOGGING WITH RESULT TRACKING
 # ============================================================================
 
 $script:ConsoleBox = $null
@@ -59,37 +83,42 @@ function Write-Log {
         [string]$Level = 'Info'
     )
     $timestamp = Get-Date -Format "HH:mm:ss"
-    $logEntry = "[$timestamp] $Message"
     $logFull = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [$Level] $Message"
     Add-Content -Path $script:LogPath -Value $logFull -ErrorAction SilentlyContinue
+
+    # Track per-category stats
+    if ($script:CurrentCategory -and $script:CategoryResults.Contains($script:CurrentCategory)) {
+        switch ($Level) {
+            'Success' { $script:CategoryResults[$script:CurrentCategory].Changed++ }
+            'Error'   { $script:CategoryResults[$script:CurrentCategory].Errors++; $script:ErrorsCount++ }
+        }
+    } elseif ($Level -eq 'Error') { $script:ErrorsCount++ }
+
     switch ($Level) {
         'Success' { Write-Host $logFull -ForegroundColor Green }
         'Warning' { Write-Host $logFull -ForegroundColor Yellow }
-        'Error'   { Write-Host $logFull -ForegroundColor Red; $script:ErrorsCount++ }
+        'Error'   { Write-Host $logFull -ForegroundColor Red }
         'Section' { Write-Host $logFull -ForegroundColor Magenta }
         default   { Write-Host $logFull -ForegroundColor Cyan }
     }
+
     # Push to GUI console
     if ($script:ConsoleBox -and $script:ConsoleWindow) {
         try {
             $colorMap = @{ Success='#6BCB77'; Warning='#FFD93D'; Error='#FF6B6B'; Section='#BB86FC'; Info='#8BB4CC' }
-            $color = $colorMap[$Level]
-            if (!$color) { $color = '#8BB4CC' }
+            $color = $colorMap[$Level]; if (!$color) { $color = '#8BB4CC' }
             $prefix = switch ($Level) { 'Success'{' + '};'Warning'{' ! '};'Error'{' X '};'Section'{'>> '};default{' . '} }
             $doc = $script:ConsoleBox.Document
             $para = New-Object System.Windows.Documents.Paragraph
             $para.Margin = [System.Windows.Thickness]::new(0)
             $para.LineHeight = 1
-            # Timestamp
             $tsRun = New-Object System.Windows.Documents.Run("[$timestamp] ")
             $tsRun.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#555566')
             $para.Inlines.Add($tsRun) | Out-Null
-            # Prefix
             $pfxRun = New-Object System.Windows.Documents.Run($prefix)
             $pfxRun.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($color)
             $pfxRun.FontWeight = [System.Windows.FontWeights]::SemiBold
             $para.Inlines.Add($pfxRun) | Out-Null
-            # Message
             $msgRun = New-Object System.Windows.Documents.Run($Message)
             $msgRun.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($color)
             $para.Inlines.Add($msgRun) | Out-Null
@@ -182,7 +211,6 @@ function Enable-ScheduledTaskSafe {
     }
     return $false
 }
-
 # ============================================================================
 # CATEGORY 1: PRIVACY & TELEMETRY (COMPREHENSIVE)
 # ============================================================================
@@ -861,8 +889,6 @@ function Restore-DefenderSettings {
     } catch { Write-Log "Could not trigger signature update" -Level Warning }
 
     Write-Log "Windows Defender: Complete" -Level Success
-    # Also restore Windows Security UI
-    Restore-WindowsSecurityUI
 }
 
 function Restore-SmartScreenSettings {
@@ -1669,8 +1695,6 @@ function Restore-MiscPolicies {
     }
 
     Write-Log "Misc Policies: Complete" -Level Success
-    # Also restore clipboard settings
-    Restore-ClipboardSettings
 }
 
 function Restore-Services {
@@ -1701,8 +1725,6 @@ function Restore-Services {
         $counter++; Restore-ServiceStartup -ServiceName $svc.Key -StartupType $svc.Value -Silent
     }
     Write-Log "Services: $counter processed" -Level Success
-    # Also restore third-party services
-    Restore-ThirdPartyServices
 }
 
 function Restore-ScheduledTasks {
@@ -2009,21 +2031,23 @@ function Restore-AppxPackages {
         $pub = $pkg.P
 
         # Check if already installed
-        if (Get-AppxPackage -Name $name -EA 0) {
+        if (Get-AppxPackageSafe -Name $name) {
             $skipped++; continue
         }
 
         # Method 1: Try manifest from another user profile
-        $otherPkgs = @(Get-AppxPackage -AllUsers $name -EA 0)
+        $otherPkgs = @(Get-AppxPackageSafe -Name $name -AllUsers)
         $success = $false
-        foreach ($op in $otherPkgs) {
-            if ($op.InstallLocation -and (Test-Path "$($op.InstallLocation)\AppxManifest.xml")) {
-                try {
-                    Add-AppxPackage -DisableDevelopmentMode -Register "$($op.InstallLocation)\AppxManifest.xml" -EA Stop
-                    $installed++; $success = $true
-                    Write-Log "Reinstalled: $name (manifest)" -Level Success
-                    break
-                } catch { }
+        if ($otherPkgs) {
+            foreach ($op in $otherPkgs) {
+                if ($op.InstallLocation -and (Test-Path "$($op.InstallLocation)\AppxManifest.xml")) {
+                    try {
+                        Add-AppxPackage -DisableDevelopmentMode -Register "$($op.InstallLocation)\AppxManifest.xml" -EA Stop
+                        $installed++; $success = $true
+                        Write-Log "Reinstalled: $name (manifest)" -Level Success
+                        break
+                    } catch { }
+                }
             }
         }
         if ($success) { continue }
@@ -2076,516 +2100,911 @@ function Restore-BackgroundApps {
     Remove-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsRunInBackground" -Silent
     Write-Log "Background Apps: Complete" -Level Success
 }
+
+
+# ============================================================================
+# PRE-SCAN DIAGNOSTICS ENGINE (with detailed per-item findings)
+# ============================================================================
+
+function Get-SystemHealthReport {
+    $report = [ordered]@{}
+    $addCat = {
+        param($name, $fn, $issues, $details, $sev, $keys)
+        if (!$details -or $details.Count -eq 0) { $details = $issues }
+        $report[$name] = @{
+            FriendlyName=$fn; Issues=[array]$issues; Details=[array]$details
+            Severity=$sev; IssueCount=([array]$issues).Count; FixKeys=$keys
+        }
+    }
+
+    # --- Windows Defender ---
+    $issues = @(); $details = @()
+    $defPol = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender"
+    if ((Get-ItemProperty $defPol -Name "DisableAntiSpyware" -EA 0).DisableAntiSpyware -eq 1) {
+        $issues += "Antivirus disabled by policy"; $details += "Policy: DisableAntiSpyware = 1"
+    }
+    if ((Get-ItemProperty "$defPol\Real-Time Protection" -Name "DisableRealtimeMonitoring" -EA 0).DisableRealtimeMonitoring -eq 1) {
+        $issues += "Real-time protection off"; $details += "Policy: DisableRealtimeMonitoring = 1"
+    }
+    $svc = Get-Service "WinDefend" -EA 0
+    if ($svc -and $svc.StartType -eq 'Disabled') { $issues += "Defender service disabled"; $details += "Service: WinDefend (Windows Defender) = Disabled" }
+    if ((Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\MsMpEng.exe" -Name "Debugger" -EA 0).Debugger) {
+        $issues += "Defender blocked by IFEO debugger"; $details += "IFEO: MsMpEng.exe has Debugger redirect"
+    }
+    $renamedExes = @(Get-ChildItem "$env:ProgramFiles\Windows Defender" -Filter "*.exe.OLD" -EA 0)
+    if ($renamedExes.Count) { $issues += "$($renamedExes.Count) Defender EXEs renamed"; $details += ($renamedExes | ForEach-Object { "Renamed: $($_.Name)" }) }
+    & $addCat "Defender" "Windows Defender" $issues $details $(if($issues.Count){"Critical"}else{"OK"}) @("chkDefender")
+
+    # --- Firewall ---
+    $issues = @(); $details = @()
+    $svc = Get-Service "MpsSvc" -EA 0
+    if ($svc -and $svc.StartType -eq 'Disabled') { $issues += "Firewall service disabled"; $details += "Service: MpsSvc (Windows Firewall) = Disabled" }
+    @("DomainProfile","PublicProfile","StandardProfile") | ForEach-Object {
+        $v = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\$_" -Name "EnableFirewall" -EA 0).EnableFirewall
+        if ($v -eq 0) { $issues += "$_ firewall off"; $details += "Firewall: $_ EnableFirewall = 0" }
+    }
+    & $addCat "Firewall" "Windows Firewall" $issues $details $(if($issues.Count){"Critical"}else{"OK"}) @("chkFirewall")
+
+    # --- SmartScreen ---
+    $issues = @(); $details = @()
+    if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableSmartScreen" -EA 0).EnableSmartScreen -eq 0) {
+        $issues += "SmartScreen disabled by policy"; $details += "Policy: EnableSmartScreen = 0"
+    }
+    if ((Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\smartscreen.exe" -Name "Debugger" -EA 0).Debugger) {
+        $issues += "SmartScreen executable blocked"; $details += "IFEO: smartscreen.exe has Debugger redirect"
+    }
+    & $addCat "SmartScreen" "SmartScreen" $issues $details $(if($issues.Count){"Critical"}else{"OK"}) @("chkSmartScreen")
+
+    # --- Security UI ---
+    $issues = @(); $details = @()
+    $secUIPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender Security Center"
+    @("Virus and threat protection","Firewall and network protection","App and browser control","Device security","Device performance and health","Family options","Account protection") | ForEach-Object {
+        if ((Get-ItemProperty "$secUIPath\$_" -Name "UILockdown" -EA 0).UILockdown -eq 1) {
+            $issues += "$_ hidden"; $details += "Section hidden: $_"
+        }
+    }
+    if (!(Get-AppxPackageSafe -Name "Microsoft.SecHealthUI") -and !(Get-AppxPackageSafe -Name "Microsoft.Windows.SecHealthUI")) {
+        $issues += "Windows Security app removed"; $details += "AppX: SecHealthUI package missing"
+    }
+    & $addCat "SecurityUI" "Windows Security App" $issues $details $(if($issues.Count){"High"}else{"OK"}) @("chkSecurityUI")
+
+    # --- Windows Update ---
+    $issues = @(); $details = @()
+    $wuSvcs = [ordered]@{ "wuauserv"="Windows Update"; "DoSvc"="Delivery Optimization"; "WaaSMedicSvc"="Update Health"; "UsoSvc"="Update Orchestrator"; "BITS"="Background Transfer" }
+    foreach ($s in $wuSvcs.GetEnumerator()) {
+        $svc = Get-Service $s.Key -EA 0
+        if ($svc -and $svc.StartType -eq 'Disabled') { $issues += "$($s.Value) disabled"; $details += "Service: $($s.Key) ($($s.Value)) = Disabled" }
+    }
+    if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -EA 0).NoAutoUpdate -eq 1) {
+        $issues += "Auto-update blocked by policy"; $details += "Policy: NoAutoUpdate = 1"
+    }
+    & $addCat "WindowsUpdate" "Windows Update" $issues $details $(if($issues.Count){"High"}else{"OK"}) @("chkWindowsUpdate")
+
+    # --- UAC ---
+    $issues = @(); $details = @()
+    $lua = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -EA 0).EnableLUA
+    if ($lua -eq 0) { $issues += "UAC completely disabled"; $details += "Policy: EnableLUA = 0 (no admin prompts)" }
+    & $addCat "UAC" "User Account Control" $issues $details $(if($issues.Count){"High"}else{"OK"}) @("chkUAC")
+
+    # --- Network ---
+    $issues = @(); $details = @()
+    $svc = Get-Service "NlaSvc" -EA 0
+    if ($svc -and $svc.StartType -eq 'Disabled') { $issues += "Network detection disabled"; $details += "Service: NlaSvc (Network Location Awareness) = Disabled" }
+    if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\NetworkConnectivityStatusIndicator" -Name "NoActiveProbe" -EA 0).NoActiveProbe -eq 1) {
+        $issues += "Internet connectivity test disabled"; $details += "Policy: NCSI NoActiveProbe = 1"
+    }
+    $dnsSvc = Get-Service "Dnscache" -EA 0
+    if ($dnsSvc -and $dnsSvc.StartType -eq 'Disabled') { $issues += "DNS Client disabled"; $details += "Service: Dnscache (DNS Client) = Disabled" }
+    & $addCat "Network" "Network Connectivity" $issues $details $(if($issues.Count){"High"}else{"OK"}) @("chkNetwork")
+
+    # --- Hosts File ---
+    $issues = @(); $details = @()
+    $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
+    if (Test-Path $hostsPath) {
+        $hContent = [System.IO.File]::ReadAllLines($hostsPath)
+        $blocked = @($hContent | Where-Object { $_ -match "^0\.0\.0\.0\s" -or $_ -match "^::1?\s" })
+        if ($blocked.Count -gt 5) {
+            $issues += "$($blocked.Count) domains blocked in hosts file"
+            $details += ($blocked | Select-Object -First 15 | ForEach-Object { "Blocked: $($_ -replace '^\S+\s+','')" })
+            if ($blocked.Count -gt 15) { $details += "... and $($blocked.Count - 15) more" }
+        }
+    }
+    & $addCat "HostsFile" "Hosts File" $issues $details $(if($issues.Count){"Medium"}else{"OK"}) @("chkHostsFile")
+
+    # --- Services (comprehensive) ---
+    $issues = @(); $details = @()
+    $criticalSvcs = [ordered]@{
+        "Spooler"="Print Spooler"; "Audiosrv"="Windows Audio"; "AudioEndpointBuilder"="Audio Endpoint Builder"
+        "Themes"="Themes"; "EventLog"="Event Log"; "bthserv"="Bluetooth Support"
+        "WSearch"="Windows Search"; "SysMain"="SysMain (Superfetch)"; "TabletInputService"="Touch Keyboard"
+        "lfsvc"="Geolocation"; "WbioSrvc"="Windows Biometric"; "XblAuthManager"="Xbox Live Auth"
+        "WpnService"="Push Notifications"; "TrkWks"="Distributed Link Tracking"
+        "TokenBroker"="Web Account Manager"; "LanmanWorkstation"="Workstation"
+        "Dnscache"="DNS Client"; "DPS"="Diagnostic Policy"; "PcaSvc"="Program Compatibility"
+        "WerSvc"="Windows Error Reporting"; "seclogon"="Secondary Logon"; "Schedule"="Task Scheduler"
+        "DiagTrack"="Connected User Experiences"; "dmwappushservice"="WAP Push Service"
+    }
+    foreach ($s in $criticalSvcs.GetEnumerator()) {
+        $svc = Get-Service $s.Key -EA 0
+        if ($svc -and $svc.StartType -eq 'Disabled') { $details += "$($s.Value) ($($s.Key))" }
+    }
+    if ($details.Count -gt 5) { $issues += "$($details.Count) system services disabled" }
+    elseif ($details.Count -gt 0) { $issues += "$($details.Count) service(s) disabled" }
+    & $addCat "Services" "System Services" $issues $details $(if($details.Count -gt 5){"High"}elseif($details.Count){"Medium"}else{"OK"}) @("chkServices","chk3rdParty")
+
+    # --- Privacy/Telemetry ---
+    $issues = @(); $details = @()
+    $svc = Get-Service "DiagTrack" -EA 0
+    if ($svc -and $svc.StartType -eq 'Disabled') { $details += "Service: DiagTrack (Diagnostics) = Disabled" }
+    $tel = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -EA 0).AllowTelemetry
+    if ($null -ne $tel -and $tel -eq 0) { $details += "Policy: AllowTelemetry = 0 (telemetry fully blocked)" }
+    if (Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy") {
+        $privPols = @((Get-Item "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -EA 0).Property)
+        if ($privPols.Count -gt 0) { $details += "AppPrivacy: $($privPols.Count) policies forcing app permissions" }
+    }
+    $bg = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" -Name "GlobalUserDisabled" -EA 0).GlobalUserDisabled
+    if ($bg -eq 1) { $details += "Background apps globally disabled" }
+    $camPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore"
+    @("microphone","webcam","location","contacts","appointments","phoneCall","radios","bluetooth","broadFileSystemAccess") | ForEach-Object {
+        $v = (Get-ItemProperty "$camPath\$_" -Name "Value" -EA 0).Value
+        if ($v -eq "Deny") { $details += "Capability blocked: $_" }
+    }
+    if ($details.Count -gt 3) { $issues += "$($details.Count) privacy restrictions detected" }
+    elseif ($details.Count -gt 0) { $issues += "$($details.Count) privacy change(s)" }
+    & $addCat "Privacy" "Privacy and Diagnostics" $issues $details $(if($details.Count -gt 3){"Medium"}elseif($details.Count){"Low"}else{"OK"}) @("chkPrivacy","chkBgApps","chkEnvVars")
+
+    # --- Store/Apps ---
+    $issues = @(); $details = @()
+    $appChecks = [ordered]@{
+        "Microsoft.WindowsStore"="Microsoft Store"; "Microsoft.WindowsCalculator"="Calculator"
+        "Microsoft.Windows.Photos"="Photos"; "Microsoft.DesktopAppInstaller"="App Installer (winget)"
+    }
+    foreach ($a in $appChecks.GetEnumerator()) {
+        if (!(Get-AppxPackageSafe -Name $a.Key)) { $issues += "$($a.Value) removed"; $details += "Missing: $($a.Key)" }
+    }
+    & $addCat "StoreApps" "Windows Apps" $issues $details $(if($issues.Count){"Medium"}else{"OK"}) @("chkAppx")
+
+    # --- Crypto ---
+    $issues = @(); $details = @()
+    $schBase = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols"
+    @("TLS 1.2","TLS 1.3") | ForEach-Object {
+        if ((Get-ItemProperty "$schBase\$_\Client" -Name "Enabled" -EA 0).Enabled -eq 0) {
+            $issues += "$_ client disabled"; $details += "Protocol: $_ Client Enabled = 0"
+        }
+    }
+    @("SSL 2.0","SSL 3.0","TLS 1.0","TLS 1.1") | ForEach-Object {
+        if (Test-Path "$schBase\$_\Client") { $details += "Protocol override exists: $_ Client" }
+        if (Test-Path "$schBase\$_\Server") { $details += "Protocol override exists: $_ Server" }
+    }
+    if ($details.Count -gt 0 -and $issues.Count -eq 0) { $issues += "$($details.Count) protocol overrides detected" }
+    & $addCat "Crypto" "Security Protocols" $issues $details $(if($issues | Where-Object {$_ -match "disabled"}){"High"}elseif($issues.Count){"Low"}else{"OK"}) @("chkCrypto")
+
+    # --- Browsers ---
+    $issues = @(); $details = @()
+    if (Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge") {
+        $ep = @((Get-Item "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -EA 0).Property)
+        if ($ep.Count -gt 2) { $issues += "Edge: $($ep.Count) policies"; $details += ($ep | Select-Object -First 10 | ForEach-Object { "Edge policy: $_" }) }
+    }
+    if (Test-Path "HKLM:\SOFTWARE\Policies\Google\Chrome") {
+        $cp = @((Get-Item "HKLM:\SOFTWARE\Policies\Google\Chrome" -EA 0).Property)
+        if ($cp.Count -gt 2) { $issues += "Chrome: $($cp.Count) policies"; $details += ($cp | Select-Object -First 10 | ForEach-Object { "Chrome policy: $_" }) }
+    }
+    if (Test-Path "HKLM:\SOFTWARE\Policies\Mozilla\Firefox") { $issues += "Firefox has policies"; $details += "Firefox group policies detected" }
+    & $addCat "Browsers" "Browser Settings" $issues $details $(if($issues.Count){"Low"}else{"OK"}) @("chkEdge","chkChrome")
+
+    # --- Taskbar/Explorer/UI ---
+    $issues = @(); $details = @()
+    $exp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    if ((Get-ItemProperty $exp -Name "TaskbarDa" -EA 0).TaskbarDa -eq 0) { $details += "Taskbar: Widgets hidden" }
+    if ((Get-ItemProperty $exp -Name "ShowTaskViewButton" -EA 0).ShowTaskViewButton -eq 0) { $details += "Taskbar: Task View hidden" }
+    if ((Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -EA 0).SearchboxTaskbarMode -eq 0) { $details += "Taskbar: Search bar hidden" }
+    $shellFolders = @(
+        @{G="{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}";N="Desktop"},@{G="{d3162b92-9365-467a-956b-92703aca08af}";N="Documents"},
+        @{G="{088e3905-0323-4b02-9826-5d99428e115f}";N="Downloads"},@{G="{3dfdf296-dbec-4fb4-81d1-6a3438bcf4de}";N="Music"}
+    )
+    foreach ($f in $shellFolders) {
+        if (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\$($f.G)")) { $details += "Explorer: $($f.N) folder removed from This PC" }
+    }
+    if ($details.Count -gt 0) { $issues += "$($details.Count) UI customizations detected" }
+    & $addCat "UI" "Taskbar and Explorer" $issues $details $(if($details.Count -gt 3){"Medium"}elseif($details.Count){"Low"}else{"OK"}) @("chkTaskbar","chkExplorer","chkStartMenu","chkContextMenus")
+
+    # --- OneDrive ---
+    $issues = @(); $details = @()
+    if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -EA 0).DisableFileSyncNGSC -eq 1) {
+        $issues += "OneDrive sync blocked"; $details += "Policy: DisableFileSyncNGSC = 1"
+    }
+    & $addCat "OneDrive" "OneDrive" $issues $details $(if($issues.Count){"Low"}else{"OK"}) @("chkOneDrive")
+
+    # --- Scheduled Tasks ---
+    $issues = @(); $details = @()
+    $taskChecks = @(
+        @{P="\Microsoft\Windows\WindowsUpdate\";N="Scheduled Start"},
+        @{P="\Microsoft\Windows\Defrag\";N="ScheduledDefrag"},
+        @{P="\Microsoft\Windows\DiskDiagnostic\";N="Microsoft-Windows-DiskDiagnosticDataCollector"},
+        @{P="\Microsoft\Windows\Diagnosis\";N="Scheduled"},
+        @{P="\Microsoft\Windows\Application Experience\";N="Microsoft Compatibility Appraiser"}
+    )
+    foreach ($tc in $taskChecks) {
+        try { $t = Get-ScheduledTask -TaskPath $tc.P -TaskName $tc.N -EA Stop
+            if ($t.State -eq 'Disabled') { $details += "Disabled: $($tc.N)" }
+        } catch { }
+    }
+    if ($details.Count -gt 0) { $issues += "$($details.Count) maintenance tasks disabled" }
+    & $addCat "Tasks" "Scheduled Tasks" $issues $details $(if($details.Count -gt 2){"Medium"}elseif($details.Count){"Low"}else{"OK"}) @("chkTasks")
+
+    # --- Windows Features ---
+    $issues = @(); $details = @()
+    try {
+        @("MicrosoftWindowsPowerShellV2Root","Printing-PrintToPDFServices-Features","SearchEngine-Client-Package","MediaPlayback","WindowsMediaPlayer") | ForEach-Object {
+            $feat = Get-WindowsOptionalFeature -Online -FeatureName $_ -EA Stop
+            if ($feat.State -eq 'Disabled') { $details += "Disabled: $_ ($($feat.DisplayName))" }
+        }
+    } catch { }
+    if ($details.Count -gt 0) { $issues += "$($details.Count) Windows features disabled" }
+    & $addCat "Features" "Windows Features" $issues $details $(if($details.Count){"Medium"}else{"OK"}) @("chkFeatures")
+
+    return $report
+}
+
+# ============================================================================
+# GUI (100% static XAML - all dynamic content populated programmatically)
+# ============================================================================
+
 function Show-MainWindow {
-    [xml]$xaml = @"
+
+    # ---- Run pre-scan ----
+    $script:HealthReport = Get-SystemHealthReport
+    $critCount  = @($script:HealthReport.Values | Where-Object { $_.Severity -eq "Critical" }).Count
+    $highCount  = @($script:HealthReport.Values | Where-Object { $_.Severity -eq "High" }).Count
+    $totalIssues = ($script:HealthReport.Values | ForEach-Object { $_.IssueCount } | Measure-Object -Sum).Sum
+
+    if ($critCount -gt 0) { $hColor = "#f85149"; $hText = "CRITICAL - $totalIssues issues found ($critCount critical)" }
+    elseif ($highCount -gt 0) { $hColor = "#d29922"; $hText = "WARNING - $totalIssues issues found" }
+    elseif ($totalIssues -gt 0) { $hColor = "#58a6ff"; $hText = "$totalIssues minor issues found" }
+    else { $hColor = "#3fb950"; $hText = "System looks healthy. No major issues detected." }
+
+    # ---- Checkbox definitions ----
+    $categories = @(
+        @{K="chkDefender";L="Windows Defender";D="Re-enables antivirus, real-time scanning, updates, unblocks executables";On=$true;G="Security"}
+        @{K="chkFirewall";L="Windows Firewall";D="Re-enables firewall on all network profiles, restores BFE service";On=$true;G="Security"}
+        @{K="chkSmartScreen";L="SmartScreen Protection";D="Re-enables download/website safety checks in Windows and browsers";On=$true;G="Security"}
+        @{K="chkWindowsUpdate";L="Windows Update";D="Restores update services, delivery optimization, re-registers components";On=$true;G="Security"}
+        @{K="chkUAC";L="User Account Control";D="Restores admin elevation prompts (prevents silent installs)";On=$true;G="Security"}
+        @{K="chkCrypto";L="TLS/SSL Security Protocols";D="Restores SCHANNEL, cipher suites, .NET crypto, and WinRM defaults";On=$true;G="Security"}
+        @{K="chkSecurityUI";L="Windows Security App";D="Restores Security Center sections, tray icon, and VBS/Device Guard";On=$true;G="Security"}
+        @{K="chkNetwork";L="Network and Internet";D="Fixes connectivity detection, DNS, NCSI, Wi-Fi, and proxy settings";On=$true;G="System"}
+        @{K="chkHostsFile";L="Clean Hosts File Blocks";D="Removes domain blocks that break Windows Update, Store, and activation";On=$true;G="System"}
+        @{K="chkServices";L="System Services (100+)";D="Re-enables critical services disabled by debloat scripts";On=$true;G="System"}
+        @{K="chkTasks";L="Scheduled Tasks (80+)";D="Re-enables Windows maintenance, defrag, health, and update tasks";On=$true;G="System"}
+        @{K="chkFeatures";L="Windows Features";D="Re-enables Print to PDF, PowerShell, Media Playback, and more";On=$true;G="System"}
+        @{K="chkErrorReport";L="Error Reporting";D="Restores crash reporting and Windows Error Reporting service";On=$true;G="System"}
+        @{K="chkPrinting";L="Printing";D="Restores Print Spooler service and print notification service";On=$true;G="System"}
+        @{K="chkMisc";L="Misc System Policies";D="Snipping Tool, Copilot autolaunch, location, Maps, DEP";On=$true;G="System"}
+        @{K="chkClipboard";L="Clipboard History and Sync";D="Restores clipboard history and cross-device sync features";On=$true;G="System"}
+        @{K="chkPrivacy";L="Privacy and Telemetry";D="Restores app permissions, diagnostics data collection, and tracking defaults";On=$true;G="Privacy"}
+        @{K="chkCopilot";L="Copilot, Cortana and AI";D="Removes policy blocks on Windows AI and voice assistant features";On=$true;G="Privacy"}
+        @{K="chkBing";L="Search and Web Results";D="Restores Bing search integration, web suggestions, and widgets";On=$true;G="Privacy"}
+        @{K="chkCDM";L="App Suggestions and Ads";D="Restores Windows Spotlight, Start suggestions, and feature tips";On=$true;G="Privacy"}
+        @{K="chkBgApps";L="Background Apps";D="Allows apps to refresh data, send notifications in the background";On=$true;G="Privacy"}
+        @{K="chkSync";L="Settings Sync";D="Restores theme, password, language sync across your devices";On=$true;G="Privacy"}
+        @{K="chkNotifications";L="Notifications";D="Restores toast notifications, lock screen alerts, and badge counts";On=$true;G="Privacy"}
+        @{K="chkEnvVars";L="Developer Telemetry";D="Removes .NET CLI and PowerShell telemetry opt-out variables";On=$true;G="Privacy"}
+        @{K="chkTaskbar";L="Taskbar Layout";D="Restores Task View, Widgets, Chat, and People icons on taskbar";On=$true;G="LookFeel"}
+        @{K="chkExplorer";L="File Explorer";D="Restores This PC folders, recent files, OneDrive icon, ribbon";On=$true;G="LookFeel"}
+        @{K="chkStartMenu";L="Start Menu";D="Restores app tracking, recommendations, and layout suggestions";On=$true;G="LookFeel"}
+        @{K="chkContextMenus";L="Right-Click Menus";D="Restores full context menus (undoes Win11 compact menu tweak)";On=$true;G="LookFeel"}
+        @{K="chkOOBE";L="Setup Experience";D="Restores first-run experience and privacy consent prompts";On=$true;G="LookFeel"}
+        @{K="chkTheme";L="Reset to Default Light Theme";D="Switches back to stock Windows light theme (cosmetic only)";On=$false;G="LookFeel"}
+        @{K="chkEdge";L="Microsoft Edge";D="Removes group policies, restores updates, extensions, features";On=$true;G="Apps"}
+        @{K="chkChrome";L="Chrome, Firefox and Google";D="Removes browser policies, restores updates and Software Reporter";On=$true;G="Apps"}
+        @{K="chkOffice";L="Microsoft Office";D="Restores telemetry, feedback, and macro security defaults";On=$true;G="Apps"}
+        @{K="chkOneDrive";L="OneDrive";D="Restores OneDrive integration, sidebar icon, and sync service";On=$true;G="Apps"}
+        @{K="chkNvidia";L="NVIDIA Telemetry";D="Restores NVIDIA telemetry tasks and scheduled services";On=$true;G="Apps"}
+        @{K="chk3rdParty";L="Third-Party App Services";D="Restores Adobe, Dropbox, Razer, Logitech, CCleaner, WMP services";On=$true;G="Apps"}
+        @{K="chkAppx";L="Reinstall Removed Windows Apps";D="Tries to restore Calculator, Photos, Store, etc. May take 5+ min";On=$false;G="Apps"}
+        @{K="chkBluetooth";L="Bluetooth";D="Restores Bluetooth services and audio gateway";On=$true;G="Hardware"}
+        @{K="chkBiometrics";L="Biometrics (Windows Hello)";D="Restores fingerprint and face recognition service";On=$true;G="Hardware"}
+        @{K="chkGaming";L="Gaming and Xbox";D="Restores Xbox services, Game Bar, and Game DVR";On=$true;G="Hardware"}
+        @{K="chkRemoteDesktop";L="Remote Desktop";D="Restores RDP services for remote connections";On=$true;G="Hardware"}
+        @{K="chkAccessibility";L="Accessibility";D="Restores tablet input, Ctrl+Alt+Del behavior";On=$true;G="Hardware"}
+        @{K="chkInput";L="Input and Typing";D="Restores handwriting recognition, inking, and typing suggestions";On=$true;G="Hardware"}
+        @{K="chkPower";L="Power and Hibernate";D="Re-enables hibernation and restores power settings";On=$true;G="Hardware"}
+        @{K="chkMemory";L="Memory and Performance";D="Restores Prefetch, Superfetch, and pagefile settings";On=$true;G="Hardware"}
+        @{K="chkStorage";L="Storage Sense";D="Restores automatic disk cleanup and Reserved Storage";On=$true;G="Hardware"}
+        @{K="chkInsider";L="Windows Insider";D="Restores Insider service and preview build settings";On=$true;G="Hardware"}
+    )
+    $allChkNames = $categories | ForEach-Object { $_.K }
+
+    $funcMap = @{
+        chkPrivacy={Restore-PrivacyTelemetry}; chkCopilot={Restore-CopilotCortanaAI}
+        chkBing={Restore-BingSearchWidgets}; chkCDM={Restore-ContentDeliveryManager}
+        chkSync={Restore-SyncSettings}; chkInsider={Restore-WindowsInsiderSettings}
+        chkBgApps={Restore-BackgroundApps}; chkEnvVars={Restore-EnvironmentVariables}
+        chkNotifications={Restore-NotificationSettings}; chkOOBE={Restore-OOBESettings}
+        chkTaskbar={Restore-TaskbarUI}; chkExplorer={Restore-ExplorerSettings}
+        chkStartMenu={Restore-StartMenuSettings}; chkTheme={Restore-ThemeSettings}
+        chkContextMenus={Restore-ContextMenus}; chkMisc={Restore-MiscPolicies}
+        chkClipboard={Restore-ClipboardSettings}
+        chkWindowsUpdate={Restore-WindowsUpdateSettings}; chkErrorReport={Restore-ErrorReporting}
+        chkEdge={Restore-EdgeSettings}; chkChrome={Restore-ChromeSettings}
+        chkOffice={Restore-OfficeSettings}; chkNvidia={Restore-NvidiaTelemetry}
+        chk3rdParty={Restore-ThirdPartyServices}
+        chkDefender={Restore-DefenderSettings}; chkSmartScreen={Restore-SmartScreenSettings}
+        chkFirewall={Restore-FirewallSettings}; chkUAC={Restore-UACSettings}
+        chkSecurityUI={Restore-WindowsSecurityUI}
+        chkBiometrics={Restore-BiometricsSettings}; chkGaming={Restore-GamingSettings}
+        chkOneDrive={Restore-OneDriveSettings}; chkRemoteDesktop={Restore-RemoteDesktopSettings}
+        chkNetwork={Restore-NetworkSettings}; chkBluetooth={Restore-BluetoothSettings}
+        chkAccessibility={Restore-AccessibilitySettings}; chkInput={Restore-InputSettings}
+        chkPrinting={Restore-PrintingSettings}; chkPower={Restore-PowerSettings}
+        chkMemory={Restore-MemoryPerformance}; chkStorage={Restore-StorageSettings}
+        chkServices={Restore-Services}; chkTasks={Restore-ScheduledTasks}
+        chkHostsFile={Restore-HostsFile}; chkCrypto={Restore-CryptoProtocols}
+        chkFeatures={Restore-WindowsFeatures}; chkAppx={Restore-AppxPackages}
+    }
+    $friendlyMap = @{}; $categories | ForEach-Object { $friendlyMap[$_.K] = $_.L }
+
+    # ================================================================
+    # STATIC XAML - single-quoted here-string prevents variable expansion
+    # ================================================================
+    [xml]$xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Maven Imaging - Windows Restoration Tool v$($script:Version)"
-        Height="880" Width="1340" MinHeight="700" MinWidth="1100"
-        WindowStartupLocation="CenterScreen" Background="#0d1117"
-        ResizeMode="CanResize">
+        Title="Windows Restore Tool" Width="920" Height="740"
+        WindowStartupLocation="CenterScreen" Background="#0d1117" ResizeMode="CanMinimize">
     <Window.Resources>
-        <!-- Checkbox Style -->
-        <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="#c9d1d9"/>
-            <Setter Property="Margin" Value="4,3"/>
-            <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <!-- Button Base Style -->
-        <Style TargetType="Button" x:Key="BtnBase">
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#21262d"/>
+            <Setter Property="Foreground" Value="#e6edf3"/>
+            <Setter Property="BorderBrush" Value="#30363d"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14,7"/>
-            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.7"/>
+                                <Setter TargetName="bd" Property="Background" Value="#30363d"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Opacity" Value="0.4"/>
+                                <Setter Property="Opacity" Value="0.4"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Action Button -->
-        <Style TargetType="Button" x:Key="BtnAction" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#21262d"/>
+        <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="#c9d1d9"/>
-            <Setter Property="BorderBrush" Value="#30363d"/>
-        </Style>
-        <!-- Primary Button -->
-        <Style TargetType="Button" x:Key="BtnPrimary" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#238636"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#2ea043"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-        <!-- Danger Button -->
-        <Style TargetType="Button" x:Key="BtnDanger" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#da3633"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#f85149"/>
-        </Style>
-        <!-- GroupBox -->
-        <Style TargetType="GroupBox">
-            <Setter Property="BorderBrush" Value="#21262d"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Padding" Value="4,2"/>
-            <Setter Property="Foreground" Value="#58a6ff"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10.5"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GroupBox">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="#161b22" CornerRadius="6,6,0,0" 
-                                    BorderBrush="#21262d" BorderThickness="1,1,1,0" Padding="10,5">
-                                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"/>
-                            </Border>
-                            <Border Grid.Row="1" Background="#0d1117" CornerRadius="0,0,6,6" 
-                                    BorderBrush="#21262d" BorderThickness="1,0,1,1" Padding="6,4">
-                                <ContentPresenter/>
-                            </Border>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
         </Style>
     </Window.Resources>
-    <Border Background="#0d1117" CornerRadius="0">
-        <Grid Margin="16">
+    <Grid>
+        <Grid x:Name="pageHome">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <!-- HEADER -->
-            <Border Grid.Row="0" Background="#161b22" CornerRadius="8" Padding="16,12" Margin="0,0,0,12"
-                    BorderBrush="#21262d" BorderThickness="1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x25A0; " Foreground="#58a6ff" FontSize="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="Windows Restoration Tool" FontSize="20" FontWeight="Bold" Foreground="#e6edf3" FontFamily="Segoe UI"/>
-                            <Border Background="#1f6feb" CornerRadius="10" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="v3.1" FontSize="10" Foreground="White" FontWeight="SemiBold"/>
-                            </Border>
-                            <Border Background="#238636" CornerRadius="10" Padding="8,2" Margin="6,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="privacy.sexy" FontSize="10" Foreground="White" FontWeight="SemiBold"/>
-                            </Border>
-                        </StackPanel>
-                        <TextBlock Text="Restore Windows to factory defaults by reversing debloat scripts, privacy.sexy tweaks, group policies, and registry modifications"
-                                   FontSize="11" Foreground="#8b949e" Margin="18,4,0,0" FontFamily="Segoe UI"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <TextBlock FontSize="10" Foreground="#8b949e" FontFamily="Segoe UI" HorizontalAlignment="Right">
-                            <Run Text="Maven Imaging IT"/>
-                        </TextBlock>
-                        <TextBlock FontSize="10" Foreground="#484f58" FontFamily="Segoe UI" HorizontalAlignment="Right">
-                            <Run Text="44 restoration categories"/>
-                        </TextBlock>
-                    </StackPanel>
-                </Grid>
-            </Border>
-            <!-- MAIN CONTENT: Left Panel + Right Console -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*" MinWidth="500"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="2*" MinWidth="320"/>
-                </Grid.ColumnDefinitions>
-                <!-- LEFT PANEL: Categories -->
-                <Border Grid.Column="0" Background="#0d1117">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <!-- Col 0 -->
-                            <GroupBox Header="  Privacy &amp; Telemetry" Grid.Row="0" Grid.Column="0"><StackPanel>
-                                <CheckBox x:Name="chkPrivacy" Content="Privacy &amp; Telemetry" IsChecked="True"/>
-                                <CheckBox x:Name="chkCopilot" Content="Copilot, Cortana &amp; AI" IsChecked="True"/>
-                                <CheckBox x:Name="chkBing" Content="Bing Search &amp; Widgets" IsChecked="True"/>
-                                <CheckBox x:Name="chkCDM" Content="Content Delivery / Ads" IsChecked="True"/>
-                                <CheckBox x:Name="chkSync" Content="Sync Settings" IsChecked="True"/>
-                                <CheckBox x:Name="chkInsider" Content="Windows Insider" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <GroupBox Header="  User Interface" Grid.Row="1" Grid.Column="0"><StackPanel>
-                                <CheckBox x:Name="chkTaskbar" Content="Taskbar &amp; UI" IsChecked="True"/>
-                                <CheckBox x:Name="chkExplorer" Content="Explorer Settings" IsChecked="True"/>
-                                <CheckBox x:Name="chkStartMenu" Content="Start Menu" IsChecked="True"/>
-                                <CheckBox x:Name="chkTheme" Content="Theme (Light Mode)" IsChecked="False" Foreground="#8b949e"/>
-                                <CheckBox x:Name="chkContextMenus" Content="Context Menus" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <GroupBox Header="  System" Grid.Row="2" Grid.Column="0"><StackPanel>
-                                <CheckBox x:Name="chkNotifications" Content="Notifications" IsChecked="True"/>
-                                <CheckBox x:Name="chkOOBE" Content="OOBE &amp; Setup" IsChecked="True"/>
-                                <CheckBox x:Name="chkWindowsUpdate" Content="Windows Update" IsChecked="True"/>
-                                <CheckBox x:Name="chkErrorReport" Content="Error Reporting" IsChecked="True"/>
-                                <CheckBox x:Name="chkMisc" Content="Misc Policies" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <!-- Col 1 -->
-                            <GroupBox Header="  Applications" Grid.Row="0" Grid.Column="1"><StackPanel>
-                                <CheckBox x:Name="chkEdge" Content="Microsoft Edge" IsChecked="True"/>
-                                <CheckBox x:Name="chkChrome" Content="Google Chrome" IsChecked="True"/>
-                                <CheckBox x:Name="chkOffice" Content="Microsoft Office" IsChecked="True"/>
-                                <CheckBox x:Name="chkNvidia" Content="NVIDIA Telemetry" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <GroupBox Header="  Security" Grid.Row="1" Grid.Column="1"><StackPanel>
-                                <CheckBox x:Name="chkDefender" Content="Windows Defender" IsChecked="True"/>
-                                <CheckBox x:Name="chkSmartScreen" Content="SmartScreen" IsChecked="True"/>
-                                <CheckBox x:Name="chkFirewall" Content="Firewall" IsChecked="True"/>
-                                <CheckBox x:Name="chkUAC" Content="UAC &amp; Security" IsChecked="True"/>
-                                <CheckBox x:Name="chkBiometrics" Content="Biometrics" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <GroupBox Header="  Features" Grid.Row="2" Grid.Column="1"><StackPanel>
-                                <CheckBox x:Name="chkGaming" Content="Gaming &amp; Xbox" IsChecked="True"/>
-                                <CheckBox x:Name="chkOneDrive" Content="OneDrive" IsChecked="True"/>
-                                <CheckBox x:Name="chkRemoteDesktop" Content="Remote Desktop" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <!-- Col 2 -->
-                            <GroupBox Header="  Network" Grid.Row="0" Grid.Column="2"><StackPanel>
-                                <CheckBox x:Name="chkNetwork" Content="Network (IPv6, DNS)" IsChecked="True"/>
-                                <CheckBox x:Name="chkBluetooth" Content="Bluetooth" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <GroupBox Header="  Hardware" Grid.Row="1" Grid.Column="2"><StackPanel>
-                                <CheckBox x:Name="chkAccessibility" Content="Accessibility" IsChecked="True"/>
-                                <CheckBox x:Name="chkInput" Content="Input Settings" IsChecked="True"/>
-                                <CheckBox x:Name="chkPrinting" Content="Printing" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <GroupBox Header="  Performance" Grid.Row="2" Grid.Column="2"><StackPanel>
-                                <CheckBox x:Name="chkPower" Content="Power Management" IsChecked="True"/>
-                                <CheckBox x:Name="chkMemory" Content="Memory &amp; Perf" IsChecked="True"/>
-                                <CheckBox x:Name="chkStorage" Content="Storage" IsChecked="True"/>
-                            </StackPanel></GroupBox>
-                            <!-- Services/Tasks -->
-                            <GroupBox Header="  Services &amp; Tasks" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3">
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="chkServices" Content="Restore Services (100+)" IsChecked="True" Margin="6,3"/>
-                                    <CheckBox x:Name="chkTasks" Content="Restore Scheduled Tasks (80+)" IsChecked="True" Margin="20,3,6,3"/>
-                                    <CheckBox x:Name="chkCrypto" Content="Crypto/SCHANNEL Protocols" IsChecked="True" Margin="6,3"/>
-                                    <CheckBox x:Name="chkFeatures" Content="Windows Optional Features" IsChecked="True" Margin="20,3,6,3"/>
-                                    <CheckBox x:Name="chkAppx" Content="Reinstall AppX Packages" IsChecked="False" Foreground="#8b949e" Margin="6,3"/>
-                                    <CheckBox x:Name="chkEnvVars" Content="Environment Variables" IsChecked="True" Margin="20,3,6,3"/>
-                                    <CheckBox x:Name="chkBgApps" Content="Background Apps" IsChecked="True" Margin="6,3"/>
-                                    <CheckBox x:Name="chkHostsFile" Content="Clean Hosts File" IsChecked="True" Margin="20,3,6,3"/>
-                                </StackPanel>
-                            </GroupBox>
-                            <!-- Quick Actions -->
-                            <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="4,4" Padding="8,6"
-                                    Background="#161b22" CornerRadius="6" BorderBrush="#21262d" BorderThickness="1">
-                                <WrapPanel>
-                                    <Button x:Name="btnSelectAll" Content="Select All" Style="{StaticResource BtnAction}"/>
-                                    <Button x:Name="btnSelectNone" Content="Select None" Style="{StaticResource BtnAction}"/>
-                                    <Button x:Name="btnSelectSafe" Content="Safe Defaults" Style="{StaticResource BtnAction}"/>
-                                    <Button x:Name="btnCreateRestore" Content=" Create Restore Point" Style="{StaticResource BtnPrimary}"/>
-                                    <Button x:Name="btnOpenLog" Content="Open Log" Style="{StaticResource BtnAction}"/>
-                                </WrapPanel>
-                            </Border>
-                        </Grid>
-                    </ScrollViewer>
-                </Border>
-                <!-- SEPARATOR -->
-                <Border Grid.Column="1" Width="1" Background="#21262d" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
-                <!-- RIGHT PANEL: Console Output -->
-                <Grid Grid.Column="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <!-- Console Header -->
-                    <Border Grid.Row="0" Background="#161b22" CornerRadius="6,6,0,0" 
-                            BorderBrush="#21262d" BorderThickness="1,1,1,0" Padding="10,7">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="8" Height="8" Fill="#3fb950" Margin="0,0,6,0"/>
-                            <TextBlock Text="CONSOLE OUTPUT" FontSize="10" Foreground="#8b949e" 
-                                       FontWeight="Bold" FontFamily="Segoe UI"/>
-                        </StackPanel>
-                    </Border>
-                    <!-- Console Body -->
-                    <Border Grid.Row="1" Background="#010409" BorderBrush="#21262d" BorderThickness="1,0,1,0">
-                        <RichTextBox x:Name="rtbConsole" IsReadOnly="True" 
-                                     Background="#010409" Foreground="#8b949e" 
-                                     FontFamily="Cascadia Mono, Consolas, Courier New" FontSize="11"
-                                     BorderThickness="0" Padding="8,4" VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Disabled">
-                            <RichTextBox.Resources>
-                                <Style TargetType="Paragraph">
-                                    <Setter Property="Margin" Value="0,1"/>
-                                </Style>
-                            </RichTextBox.Resources>
-                            <FlowDocument/>
-                        </RichTextBox>
-                    </Border>
-                    <!-- Console Stats Footer -->
-                    <Border Grid.Row="2" Background="#161b22" CornerRadius="0,0,6,6" 
-                            BorderBrush="#21262d" BorderThickness="1,0,1,1" Padding="10,6">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" x:Name="txtConsoleStatus" Text="Waiting..." 
-                                       Foreground="#484f58" FontSize="10" FontFamily="Segoe UI" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0">
-                                <TextBlock Text="Changes: " Foreground="#484f58" FontSize="10" FontFamily="Segoe UI"/>
-                                <TextBlock x:Name="txtChanges" Text="0" Foreground="#3fb950" FontSize="10" FontWeight="Bold" FontFamily="Segoe UI"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                <TextBlock Text="Errors: " Foreground="#484f58" FontSize="10" FontFamily="Segoe UI"/>
-                                <TextBlock x:Name="txtErrors" Text="0" Foreground="#f85149" FontSize="10" FontWeight="Bold" FontFamily="Segoe UI"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </Grid>
-            <!-- FOOTER -->
-            <Border Grid.Row="2" Margin="0,12,0,0">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <!-- Progress Section -->
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock x:Name="txtStatus" Text="Ready - Select categories and click Restore" 
-                                   Foreground="#8b949e" FontSize="11" FontFamily="Segoe UI" Margin="0,0,0,6"/>
-                        <Border Background="#161b22" CornerRadius="3" Height="8" BorderBrush="#21262d" BorderThickness="1">
-                            <ProgressBar x:Name="progressBar" Height="6" Margin="1" 
-                                         Background="Transparent" Foreground="#1f6feb" BorderThickness="0"/>
+            <Border Grid.Row="0" Background="#161b22" Padding="20,14" BorderBrush="#30363d" BorderThickness="0,0,0,1">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Windows Restore Tool" FontSize="20" FontWeight="Bold" Foreground="#e6edf3"/>
+                        <Border Background="#238636" CornerRadius="10" Padding="8,2" Margin="10,0" VerticalAlignment="Center">
+                            <TextBlock Text="v4.2" FontSize="10" Foreground="White" FontWeight="SemiBold"/>
                         </Border>
                     </StackPanel>
-                    <!-- Action Buttons -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
-                        <Button x:Name="btnRestore" Content="   RESTORE SETTINGS   " Style="{StaticResource BtnPrimary}" 
-                                FontSize="13" Padding="24,10"/>
-                        <Button x:Name="btnCancel" Content="Exit" Style="{StaticResource BtnAction}" Padding="18,10"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="Fixes PCs broken by debloat scripts, privacy.sexy, and registry tweaks" Foreground="#8b949e" FontSize="12" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Background="#0d1117" Padding="20,10,20,6">
+                <StackPanel>
+                    <TextBlock Text="System Scan" FontSize="13" FontWeight="SemiBold" Foreground="#c9d1d9" Margin="0,0,0,6"/>
+                    <Border Background="#161b22" CornerRadius="6" Padding="12,8" BorderBrush="#30363d" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock x:Name="txtHealthSummary" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <StackPanel x:Name="scanResults"/>
+                            <TextBlock x:Name="txtScanHint" Foreground="#484f58" FontSize="10" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="20,10">
+                <StackPanel>
+                    <TextBlock Text="Choose how to fix your PC:" FontSize="13" FontWeight="SemiBold" Foreground="#c9d1d9" Margin="0,0,0,8"/>
+                    <Border x:Name="btnFixAll" Background="#161b22" CornerRadius="8" Padding="16,12" Margin="0,0,0,6" BorderBrush="#238636" BorderThickness="2" Cursor="Hand">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Recommended Fix" FontSize="15" FontWeight="Bold" Foreground="#3fb950"/>
+                                    <Border Background="#238636" CornerRadius="3" Padding="6,1" Margin="8,0" VerticalAlignment="Center">
+                                        <TextBlock Text="SAFE" FontSize="9" Foreground="White" FontWeight="Bold"/></Border>
+                                </StackPanel>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8b949e" FontSize="11" Margin="0,3,0,0" Text="Restores all security, services, and system defaults. Keeps your dark theme. Does NOT reinstall removed apps."/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="&#xBB;" FontSize="24" Foreground="#3fb950" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="btnFixDetected" Background="#161b22" CornerRadius="8" Padding="16,12" Margin="0,0,0,6" BorderBrush="#d29922" BorderThickness="1" Cursor="Hand">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Fix Detected Issues Only" FontSize="15" FontWeight="Bold" Foreground="#d29922"/>
+                                    <Border Background="#4a3000" CornerRadius="3" Padding="6,1" Margin="8,0" VerticalAlignment="Center">
+                                        <TextBlock x:Name="txtDetectedCount" FontSize="9" Foreground="#d29922" FontWeight="Bold"/></Border>
+                                </StackPanel>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8b949e" FontSize="11" Margin="0,3,0,0" Text="Only fixes the specific problems found by the scanner. Click any scan item above for details."/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="&#xBB;" FontSize="24" Foreground="#d29922" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="btnFixSecurity" Background="#161b22" CornerRadius="8" Padding="16,12" Margin="0,0,0,6" BorderBrush="#30363d" BorderThickness="1" Cursor="Hand">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Security Only" FontSize="15" FontWeight="Bold" Foreground="#58a6ff"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8b949e" FontSize="11" Margin="0,3,0,0" Text="Only fixes Defender, Firewall, SmartScreen, Windows Update, UAC, and security protocols."/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="&#xBB;" FontSize="24" Foreground="#58a6ff" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="btnCustom" Background="#161b22" CornerRadius="8" Padding="16,12" Margin="0,0,0,6" BorderBrush="#30363d" BorderThickness="1" Cursor="Hand">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Custom" FontSize="15" FontWeight="Bold" Foreground="#8b949e"/>
+                                    <Border Background="#1a3070" CornerRadius="3" Padding="6,1" Margin="8,0" VerticalAlignment="Center">
+                                        <TextBlock Text="ADVANCED" FontSize="9" Foreground="#58a6ff" FontWeight="Bold"/></Border>
+                                </StackPanel>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8b949e" FontSize="11" Margin="0,3,0,0" Text="Pick exactly what to restore from 47 categories. Full control over every setting."/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="&#xBB;" FontSize="24" Foreground="#8b949e" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="btnScanOnly" Background="#0d1117" CornerRadius="8" Padding="16,8" Margin="0,4,0,0" BorderBrush="#21262d" BorderThickness="1" Cursor="Hand">
+                        <TextBlock HorizontalAlignment="Center" Foreground="#8b949e" FontSize="12" Text="Preview Only - Show what would change without changing anything"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+            <Border Grid.Row="3" Background="#161b22" Padding="14,8" BorderBrush="#30363d" BorderThickness="0,1,0,0">
+                <DockPanel>
+                    <CheckBox x:Name="chkAutoRestore" Content="Create a restore point first (strongly recommended)" IsChecked="True" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                    <Button x:Name="btnClose" Content="Exit" DockPanel.Dock="Right" HorizontalAlignment="Right" Padding="16,6"/>
+                </DockPanel>
             </Border>
         </Grid>
-    </Border>
+        <Grid x:Name="pageCustom" Visibility="Collapsed">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="#161b22" Padding="14,10" BorderBrush="#30363d" BorderThickness="0,0,0,1">
+                <DockPanel>
+                    <Button x:Name="btnBack" Content="&#x2190; Back" DockPanel.Dock="Left" Padding="10,5" FontSize="12"/>
+                    <TextBlock Text="  Custom Restoration" FontSize="15" FontWeight="SemiBold" Foreground="#e6edf3" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <Button x:Name="btnSelectAll" Content="All" Padding="8,4" FontSize="11" Margin="0,0,4,0"/>
+                        <Button x:Name="btnSelectNone" Content="None" Padding="8,4" FontSize="11" Margin="0,0,4,0"/>
+                        <Button x:Name="btnSelectSafe" Content="Safe Defaults" Padding="8,4" FontSize="11"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,0,16,8">
+                <StackPanel x:Name="chkContainer"/>
+            </ScrollViewer>
+            <Border Grid.Row="2" Background="#161b22" Padding="14,8" BorderBrush="#30363d" BorderThickness="0,1,0,0">
+                <DockPanel>
+                    <CheckBox x:Name="chkAutoRestoreC" Content="Create restore point first" IsChecked="True" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                    <Button x:Name="btnRunCustom" DockPanel.Dock="Right" HorizontalAlignment="Right" Padding="16,8" Background="#238636" Foreground="White" BorderBrush="#238636">
+                        <TextBlock Text="Run Selected Fixes" FontWeight="SemiBold"/></Button>
+                </DockPanel>
+            </Border>
+        </Grid>
+        <Grid x:Name="pageProgress" Visibility="Collapsed">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="#161b22" Padding="20,14" BorderBrush="#30363d" BorderThickness="0,0,0,1">
+                <StackPanel>
+                    <TextBlock x:Name="txtProgressTitle" Text="Restoring Windows defaults..." FontSize="18" FontWeight="Bold" Foreground="#e6edf3"/>
+                    <TextBlock x:Name="txtProgressSub" Text="Do not close this window" Foreground="#8b949e" FontSize="12" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Background="#0d1117" Padding="20,8">
+                <StackPanel>
+                    <ProgressBar x:Name="progressBar" Height="6" Minimum="0" Maximum="100" Value="0" Background="#21262d" Foreground="#238636" BorderThickness="0"/>
+                    <DockPanel Margin="0,4,0,0">
+                        <TextBlock x:Name="txtProgressPercent" Text="0%" Foreground="#8b949e" FontSize="11"/>
+                        <TextBlock x:Name="txtProgressStep" Text="" Foreground="#484f58" FontSize="11" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Background="#0d1117" Padding="20,4,20,8">
+                <Border Background="#161b22" CornerRadius="6" Padding="2" BorderBrush="#30363d" BorderThickness="1">
+                    <RichTextBox x:Name="txtConsole" IsReadOnly="True" Background="Transparent" BorderThickness="0"
+                                 FontFamily="Cascadia Mono,Consolas,Courier New" FontSize="11"
+                                 VerticalScrollBarVisibility="Auto" Padding="6">
+                        <RichTextBox.Resources><Style TargetType="Paragraph"><Setter Property="Margin" Value="0"/></Style></RichTextBox.Resources>
+                        <FlowDocument/>
+                    </RichTextBox>
+                </Border>
+            </Border>
+            <Border Grid.Row="3" Background="#161b22" Padding="14,8" BorderBrush="#30363d" BorderThickness="0,1,0,0">
+                <DockPanel>
+                    <TextBlock x:Name="txtStatus" Text="" Foreground="#8b949e" FontSize="11" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <Button x:Name="btnReboot" Visibility="Collapsed" Padding="14,8" Background="#238636" Foreground="White" BorderBrush="#238636">
+                            <TextBlock Text="Reboot Now" FontWeight="SemiBold"/></Button>
+                        <Button x:Name="btnLater" Content="Close (Reboot Later)" Visibility="Collapsed" Padding="14,8" Margin="6,0,0,0"/>
+                        <Button x:Name="btnViewLog" Content="Open Log File" Visibility="Collapsed" Padding="14,8" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
 </Window>
-"@
+'@
 
-    $reader = New-Object System.Xml.XmlNodeReader $xaml
-    $window = [Windows.Markup.XamlReader]::Load($reader)
-    
-    $controls = @{}
-    @("chkPrivacy","chkCopilot","chkBing","chkCDM","chkSync","chkInsider","chkTaskbar","chkExplorer",
-      "chkStartMenu","chkTheme","chkContextMenus","chkNotifications","chkOOBE","chkWindowsUpdate",
-      "chkErrorReport","chkMisc","chkEdge","chkChrome","chkOffice","chkNvidia","chkDefender",
-      "chkSmartScreen","chkFirewall","chkUAC","chkBiometrics","chkGaming","chkOneDrive",
-      "chkRemoteDesktop","chkNetwork","chkBluetooth","chkAccessibility","chkInput","chkPrinting",
-      "chkPower","chkMemory","chkStorage","chkServices","chkTasks",
-      "chkCrypto","chkFeatures","chkAppx","chkEnvVars","chkBgApps","chkHostsFile",
-      "btnSelectAll","btnSelectNone","btnSelectSafe","btnCreateRestore","btnOpenLog",
-      "btnRestore","btnCancel","txtStatus","progressBar","rtbConsole",
-      "txtConsoleStatus","txtChanges","txtErrors"
-    ) | ForEach-Object { $controls[$_] = $window.FindName($_) }
-    
-    # Wire up console for Write-Log
-    $script:ConsoleBox = $controls.rtbConsole
+    # ---- Load window ----
+    try {
+        $reader = New-Object System.Xml.XmlNodeReader $xaml
+        $window = [Windows.Markup.XamlReader]::Load($reader)
+    } catch {
+        [System.Windows.MessageBox]::Show("UI failed to load: $($_.Exception.Message)", "Error", "OK", "Error")
+        return
+    }
+
+    # ---- Find named controls ----
+    $ui = @{}
+    $xaml.SelectNodes("//*[@*[contains(translate(name(),'X','x'),'x:name')]]") | ForEach-Object {
+        $n = $_.Name; if (!$n) { $n = $_."x:Name" }; if ($n) { $ui[$n] = $window.FindName($n) }
+    }
+    $script:ConsoleBox = $ui.txtConsole
     $script:ConsoleWindow = $window
-    
-    $allCheckboxes = $controls.Keys | Where-Object { $_ -like "chk*" } | ForEach-Object { $controls[$_] }
-    
-    $controls.btnSelectAll.Add_Click({ $allCheckboxes | ForEach-Object { $_.IsChecked = $true } })
-    $controls.btnSelectNone.Add_Click({ $allCheckboxes | ForEach-Object { $_.IsChecked = $false } })
-    $controls.btnSelectSafe.Add_Click({ $allCheckboxes | ForEach-Object { $_.IsChecked = $true }; $controls.chkTheme.IsChecked = $false })
-    
-    $controls.btnCreateRestore.Add_Click({
-        $controls.txtStatus.Text = "Creating restore point..."
-        $controls.txtConsoleStatus.Text = "Creating restore point..."
+
+    # ================================================================
+    # POPULATE ALL DYNAMIC CONTENT PROGRAMMATICALLY (safe from XML)
+    # ================================================================
+    $bc = [System.Windows.Media.BrushConverter]::new()
+
+    # Health summary
+    $ui.txtHealthSummary.Text = $hText
+    $ui.txtHealthSummary.Foreground = $bc.ConvertFromString($hColor)
+
+    # Scan results
+    $sevOrder = @{Critical=0;High=1;Medium=2;Low=3;OK=4}
+    $sevColors = @{Critical="#f85149";High="#d29922";Medium="#58a6ff";Low="#8b949e";OK="#3fb950"}
+    $sevLabels = @{Critical="CRITICAL";High="WARNING";Medium="CHANGED";Low="NOTICE";OK="OK"}
+
+    $issueCategories = @()
+    $script:HealthReport.GetEnumerator() | Sort-Object { $sevOrder[$_.Value.Severity] } | ForEach-Object {
+        $cat = $_.Value; $sev = $cat.Severity
+        if ($cat.IssueCount -gt 0) { $issueCategories += $_ }
+
+        $row = New-Object System.Windows.Controls.Border
+        $row.Margin = [System.Windows.Thickness]::new(0,2,0,0)
+        $row.Padding = [System.Windows.Thickness]::new(10,5,10,5)
+        $row.CornerRadius = [System.Windows.CornerRadius]::new(4)
+        if ($sev -ne "OK") {
+            $row.Background = $bc.ConvertFromString("#161b22")
+            $row.Cursor = [System.Windows.Input.Cursors]::Hand
+        }
+
+        $sp = New-Object System.Windows.Controls.StackPanel
+        $sp.Orientation = "Horizontal"
+
+        # Severity badge
+        $badge = New-Object System.Windows.Controls.Border
+        $badge.Background = $bc.ConvertFromString($sevColors[$sev])
+        $badge.CornerRadius = [System.Windows.CornerRadius]::new(3)
+        $badge.Padding = [System.Windows.Thickness]::new(6,1,6,1)
+        $badge.Margin = [System.Windows.Thickness]::new(0,0,8,0)
+        $badge.VerticalAlignment = "Center"; $badge.MinWidth = 58
+        $bt = New-Object System.Windows.Controls.TextBlock
+        $bt.Text = $sevLabels[$sev]; $bt.Foreground = $bc.ConvertFromString("White")
+        $bt.FontSize = 10; $bt.FontWeight = "Bold"; $bt.HorizontalAlignment = "Center"
+        $badge.Child = $bt
+        $sp.Children.Add($badge) | Out-Null
+
+        # Category name + summary
+        $txt = New-Object System.Windows.Controls.TextBlock
+        $txt.FontSize = 12; $txt.VerticalAlignment = "Center"
+        $nameRun = New-Object System.Windows.Documents.Run($cat.FriendlyName)
+        $nameRun.FontWeight = "SemiBold"
+        $nameRun.Foreground = $bc.ConvertFromString($(if($sev -ne "OK"){"#c9d1d9"}else{"#484f58"}))
+        $txt.Inlines.Add($nameRun) | Out-Null
+
+        if ($cat.IssueCount -gt 0) {
+            $sumText = " - $($cat.Issues[0])"
+            if ($cat.IssueCount -gt 1) { $sumText += " (+$($cat.IssueCount-1) more)" }
+            $sumRun = New-Object System.Windows.Documents.Run($sumText)
+            $sumRun.Foreground = $bc.ConvertFromString("#8b949e")
+            $txt.Inlines.Add($sumRun) | Out-Null
+            # Click hint
+            $hintRun = New-Object System.Windows.Documents.Run("  [details]")
+            $hintRun.Foreground = $bc.ConvertFromString("#58a6ff"); $hintRun.FontSize = 10
+            $txt.Inlines.Add($hintRun) | Out-Null
+        }
+        $sp.Children.Add($txt) | Out-Null
+        $row.Child = $sp
+
+        # Click handler for detail popup
+        if ($cat.IssueCount -gt 0) {
+            $detailLines = @("$($cat.FriendlyName) - $($cat.IssueCount) issue(s) found:", "")
+            foreach ($d in $cat.Details) { $detailLines += "  - $d" }
+            $row.Tag = ($detailLines -join "`n")
+            $row.Add_MouseLeftButtonUp({ param($s,$e)
+                [System.Windows.MessageBox]::Show($s.Tag, "Scan Details", "OK", "Information")
+            })
+        }
+
+        $ui.scanResults.Children.Add($row) | Out-Null
+    }
+
+    # Scan hint and detected count
+    if ($totalIssues -gt 0) {
+        $ui.txtScanHint.Text = "Click any highlighted item to see exactly what was changed"
+    } else {
+        $ui.txtScanHint.Text = ""
+    }
+    $ui.txtDetectedCount.Text = "$totalIssues found"
+
+    # Build detected fix keys
+    $detectedKeys = @()
+    foreach ($c in $script:HealthReport.Values) {
+        if ($c.IssueCount -gt 0 -and $c.FixKeys) { $detectedKeys += $c.FixKeys }
+    }
+    $detectedKeys = @($detectedKeys | Select-Object -Unique)
+
+    # ---- Build custom page checkboxes programmatically ----
+    $groupMeta = [ordered]@{
+        Security = @{Label="CRITICAL SECURITY"; Color="#f85149"; Desc="Protects your PC from viruses, hackers, and unsafe software"}
+        System   = @{Label="SYSTEM FUNCTIONALITY"; Color="#d29922"; Desc="Core Windows services and features that keep your PC running"}
+        Privacy  = @{Label="PRIVACY AND PERSONALIZATION"; Color="#58a6ff"; Desc="Data collection, app permissions, and personalization features"}
+        LookFeel = @{Label="LOOK AND FEEL"; Color="#8b949e"; Desc="Taskbar, Start menu, Explorer, and visual customization"}
+        Apps     = @{Label="APPS AND BROWSERS"; Color="#8b949e"; Desc="Browser settings, Office, OneDrive, and third-party app policies"}
+        Hardware = @{Label="HARDWARE AND DEVICES"; Color="#8b949e"; Desc="Bluetooth, biometrics, gaming, power, storage, and input devices"}
+    }
+
+    foreach ($grp in $groupMeta.GetEnumerator()) {
+        # Group header
+        $header = New-Object System.Windows.Controls.TextBlock
+        $header.Margin = [System.Windows.Thickness]::new(0,8,0,2)
+        $r1 = New-Object System.Windows.Documents.Run($grp.Value.Label)
+        $r1.FontSize = 11; $r1.FontWeight = "Bold"; $r1.Foreground = $bc.ConvertFromString($grp.Value.Color)
+        $header.Inlines.Add($r1) | Out-Null
+        $r2 = New-Object System.Windows.Documents.Run("  $($grp.Value.Desc)")
+        $r2.FontSize = 10; $r2.Foreground = $bc.ConvertFromString("#484f58")
+        $header.Inlines.Add($r2) | Out-Null
+        $ui.chkContainer.Children.Add($header) | Out-Null
+
+        # Group border with WrapPanel
+        $grpBorder = New-Object System.Windows.Controls.Border
+        $grpBorder.Background = $bc.ConvertFromString("#161b22")
+        $grpBorder.CornerRadius = [System.Windows.CornerRadius]::new(6)
+        $grpBorder.Padding = [System.Windows.Thickness]::new(12,6,12,6)
+        $grpBorder.Margin = [System.Windows.Thickness]::new(0,0,0,4)
+        $wp = New-Object System.Windows.Controls.WrapPanel
+
+        $grpItems = $categories | Where-Object { $_.G -eq $grp.Key }
+        foreach ($cat in $grpItems) {
+            $sp = New-Object System.Windows.Controls.StackPanel
+            $sp.Width = 264; $sp.Margin = [System.Windows.Thickness]::new(0,3,8,3)
+
+            $cb = New-Object System.Windows.Controls.CheckBox
+            $cb.Content = $cat.L; $cb.IsChecked = $cat.On
+            $cb.Foreground = $bc.ConvertFromString($(if($cat.On){"#c9d1d9"}else{"#8b949e"}))
+            $cb.FontSize = 12; $cb.Cursor = [System.Windows.Input.Cursors]::Hand
+            $sp.Children.Add($cb) | Out-Null
+
+            $desc = New-Object System.Windows.Controls.TextBlock
+            $desc.Text = $cat.D; $desc.FontSize = 10; $desc.TextWrapping = "Wrap"
+            $desc.Margin = [System.Windows.Thickness]::new(20,0,0,0)
+            $desc.Foreground = $bc.ConvertFromString($(if($cat.K -eq "chkAppx"){"#d29922"}else{"#6e7681"}))
+            $sp.Children.Add($desc) | Out-Null
+
+            $wp.Children.Add($sp) | Out-Null
+            $ui[$cat.K] = $cb   # Store checkbox reference
+        }
+
+        $grpBorder.Child = $wp
+        $ui.chkContainer.Children.Add($grpBorder) | Out-Null
+    }
+
+    # ================================================================
+    # PRESETS AND RUN LOGIC
+    # ================================================================
+    $securityOnly = @("chkDefender","chkFirewall","chkSmartScreen","chkWindowsUpdate","chkUAC","chkSecurityUI","chkCrypto")
+    $safeDefaults = $allChkNames | Where-Object { $_ -ne "chkTheme" -and $_ -ne "chkAppx" }
+
+    $runRestore = {
+        param($selectedKeys, $doRestorePoint, $scanOnlyMode)
+        $ui.pageHome.Visibility = "Collapsed"
+        $ui.pageCustom.Visibility = "Collapsed"
+        $ui.pageProgress.Visibility = "Visible"
+
+        if ($scanOnlyMode) {
+            $ui.txtProgressTitle.Text = "Scanning (preview mode)..."
+            $ui.txtProgressSub.Text = "No changes will be made"
+        }
         $window.Dispatcher.Invoke([action]{}, "Render")
-        try {
-            # Enable System Restore via registry (works on all editions)
-            $srKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
-            if (!(Test-Path $srKey)) { New-Item -Path $srKey -Force | Out-Null }
-            Set-ItemProperty -Path $srKey -Name "RPSessionInterval" -Value 1 -Type DWord -Force -EA 0
-            # Enable VSS service
-            $vss = Get-Service -Name "VSS" -EA 0
-            if ($vss -and $vss.Status -ne 'Running') { Start-Service -Name "VSS" -EA 0 }
-            $srService = Get-Service -Name "swprv" -EA 0
-            if ($srService -and $srService.Status -ne 'Running') { Start-Service -Name "swprv" -EA 0 }
-            # Try Enable-ComputerRestore first (Pro/Enterprise), fall back to registry
-            try { Enable-ComputerRestore -Drive "C:\" -EA Stop } catch {
-                Set-ItemProperty -Path $srKey -Name "DisableSR" -Value 0 -Type DWord -Force -EA 0
-            }
-            # Create restore point via CIM (works on all editions and PS 5.1+/7+)
-            $cimResult = Invoke-CimMethod -Namespace "root\default" -ClassName "SystemRestore" -MethodName "CreateRestorePoint" -Arguments @{
-                Description = "Before Windows Registry Restoration"
-                RestorePointType = [uint32]12
-                EventType = [uint32]100
-            } -ErrorAction Stop
-            if ($cimResult.ReturnValue -eq 0) {
+
+        # Restore point
+        if ($doRestorePoint -and !$scanOnlyMode) {
+            $ui.txtProgressSub.Text = "Creating restore point..."
+            $window.Dispatcher.Invoke([action]{}, "Render")
+            Write-Log "Creating system restore point..." -Level Info
+            try {
+                Enable-ComputerRestore -Drive "$env:SystemDrive\" -EA 0
+                Checkpoint-Computer -Description "Before Windows Restore Tool v4.2" -RestorePointType MODIFY_SETTINGS -EA Stop
                 Write-Log "Restore point created successfully" -Level Success
-                [System.Windows.MessageBox]::Show("Restore point created successfully!", "Success", "OK", "Information")
-                $controls.txtStatus.Text = "Restore point created"
-                $controls.txtConsoleStatus.Text = "Restore point created"
-            } elseif ($cimResult.ReturnValue -eq 1) {
-                Write-Log "Restore point skipped - recent one exists" -Level Warning
-                [System.Windows.MessageBox]::Show("Restore point skipped - one was already created recently.`nWindows limits restore points to one per 24 hours.", "Info", "OK", "Information")
-                $controls.txtStatus.Text = "Restore point skipped (recent one exists)"
-                $controls.txtConsoleStatus.Text = "Restore point exists"
-            } else {
-                throw "CreateRestorePoint returned code: $($cimResult.ReturnValue)"
+            } catch {
+                Write-Log "Could not create restore point: $($_.Exception.Message)" -Level Warning
+                Write-Log "Continuing anyway..." -Level Info
             }
-        } catch {
-            Write-Log "Restore point failed: $($_.Exception.Message)" -Level Error
-            [System.Windows.MessageBox]::Show("Failed: $($_.Exception.Message)`n`nYou can manually create one via:`nSystem Properties > System Protection > Create", "Error", "OK", "Error")
-            $controls.txtStatus.Text = "Restore point failed - try manually"
-            $controls.txtConsoleStatus.Text = "Restore point failed"
+            $ui.txtProgressSub.Text = "Do not close this window"
+            $window.Dispatcher.Invoke([action]{}, "Render")
         }
-    })
-    
-    $controls.btnOpenLog.Add_Click({ Start-Process explorer.exe -ArgumentList (Split-Path $script:LogPath -Parent) })
-    $controls.btnCancel.Add_Click({ $window.Close() })
-    
-    $controls.btnRestore.Add_Click({
-        $result = [System.Windows.MessageBox]::Show(
-            "This will restore Windows registry settings to defaults.`n`nReverses privacy.sexy and other debloat scripts.`nThis cannot be easily undone. Create a restore point first!`n`nContinue?",
-            "Confirm Restoration", "YesNo", "Warning")
-        
-        if ($result -eq "Yes") {
-            $controls.btnRestore.IsEnabled = $false
-            $controls.btnCancel.IsEnabled = $false
-            $controls.btnCreateRestore.IsEnabled = $false
-            $controls.btnSelectAll.IsEnabled = $false
-            $controls.btnSelectNone.IsEnabled = $false
-            $controls.btnSelectSafe.IsEnabled = $false
-            Write-Log "=== Windows Registry Restoration Started ===" -Level Section
-            Write-Log "Running as $env:USERNAME on $env:COMPUTERNAME" -Level Info
-            
-            $taskList = @()
-            $map = [ordered]@{
-                chkPrivacy="Privacy & Telemetry"; chkCopilot="Copilot & AI"; chkBing="Bing & Widgets"; chkCDM="Content Delivery"
-                chkSync="Sync Settings"; chkInsider="Windows Insider"; chkTaskbar="Taskbar & UI"; chkExplorer="Explorer"
-                chkStartMenu="Start Menu"; chkTheme="Theme"; chkContextMenus="Context Menus"
-                chkNotifications="Notifications"; chkOOBE="OOBE & Setup"; chkWindowsUpdate="Windows Update"
-                chkErrorReport="Error Reporting"; chkMisc="Misc Policies"; chkEdge="Microsoft Edge"; chkChrome="Google Chrome"
-                chkOffice="Microsoft Office"; chkNvidia="NVIDIA"; chkDefender="Windows Defender"; chkSmartScreen="SmartScreen"
-                chkFirewall="Firewall"; chkUAC="UAC & Security"; chkBiometrics="Biometrics"; chkGaming="Gaming & Xbox"
-                chkOneDrive="OneDrive"; chkRemoteDesktop="Remote Desktop"; chkNetwork="Network"
-                chkBluetooth="Bluetooth"; chkAccessibility="Accessibility"; chkInput="Input"
-                chkPrinting="Printing"; chkPower="Power"; chkMemory="Memory & Performance"; chkStorage="Storage"
-                chkServices="Services"; chkTasks="Scheduled Tasks"
-                chkCrypto="Crypto Protocols"; chkFeatures="Windows Features"; chkAppx="AppX Packages"
-                chkEnvVars="Environment Variables"; chkBgApps="Background Apps"; chkHostsFile="Hosts File"
+
+        $mode = if ($scanOnlyMode) { "PREVIEW" } else { "RESTORE" }
+        Write-Log "=== Windows Restore Tool v4.2 - $mode MODE ===" -Level Section
+        Write-Log "User: $env:USERNAME | Computer: $env:COMPUTERNAME | OS: $([System.Environment]::OSVersion.VersionString)" -Level Info
+        Write-Log "Categories selected: $($selectedKeys.Count)" -Level Info
+        Write-Log "" -Level Info
+
+        if ($scanOnlyMode) {
+            Write-Log "PREVIEW MODE: No actual changes will be made." -Level Section
+            Write-Log "" -Level Info
+            foreach ($key in $selectedKeys) {
+                $fn = $friendlyMap[$key]; if (!$fn) { $fn = $key }
+                Write-Log "Would restore: $fn" -Level Info
             }
-            $funcMap = @{
-                chkPrivacy={Restore-PrivacyTelemetry}; chkCopilot={Restore-CopilotCortanaAI}
-                chkBing={Restore-BingSearchWidgets}; chkCDM={Restore-ContentDeliveryManager}
-                chkSync={Restore-SyncSettings}; chkInsider={Restore-WindowsInsiderSettings}
-                chkTaskbar={Restore-TaskbarUI}; chkExplorer={Restore-ExplorerSettings}
-                chkStartMenu={Restore-StartMenuSettings}; chkTheme={Restore-ThemeSettings}
-                chkContextMenus={Restore-ContextMenus}; chkNotifications={Restore-NotificationSettings}
-                chkOOBE={Restore-OOBESettings}; chkWindowsUpdate={Restore-WindowsUpdateSettings}
-                chkErrorReport={Restore-ErrorReporting}; chkMisc={Restore-MiscPolicies}
-                chkEdge={Restore-EdgeSettings}; chkChrome={Restore-ChromeSettings}
-                chkOffice={Restore-OfficeSettings}; chkNvidia={Restore-NvidiaTelemetry}
-                chkDefender={Restore-DefenderSettings}; chkSmartScreen={Restore-SmartScreenSettings}
-                chkFirewall={Restore-FirewallSettings}; chkUAC={Restore-UACSettings}
-                chkBiometrics={Restore-BiometricsSettings}; chkGaming={Restore-GamingSettings}
-                chkOneDrive={Restore-OneDriveSettings}; chkRemoteDesktop={Restore-RemoteDesktopSettings}
-                chkNetwork={Restore-NetworkSettings}; chkBluetooth={Restore-BluetoothSettings}
-                chkAccessibility={Restore-AccessibilitySettings}; chkInput={Restore-InputSettings}
-                chkPrinting={Restore-PrintingSettings}; chkPower={Restore-PowerSettings}
-                chkMemory={Restore-MemoryPerformance}; chkStorage={Restore-StorageSettings}
-                chkServices={Restore-Services}; chkTasks={Restore-ScheduledTasks}
-                chkCrypto={Restore-CryptoProtocols}; chkFeatures={Restore-WindowsFeatures}; chkAppx={Restore-AppxPackages}
-                chkEnvVars={Restore-EnvironmentVariables}; chkBgApps={Restore-BackgroundApps}; chkHostsFile={Restore-HostsFile}
-            }
-            
-            foreach ($key in $map.Keys) {
-                if ($controls[$key].IsChecked) {
-                    $taskList += @{N=$map[$key]; A=$funcMap[$key]}
-                }
-            }
-            
-            Write-Log "Processing $($taskList.Count) categories..." -Level Info
-            $controls.progressBar.Maximum = $taskList.Count
-            $controls.progressBar.Value = 0
-            
-            for ($i = 0; $i -lt $taskList.Count; $i++) {
-                $controls.txtStatus.Text = "[$($i+1)/$($taskList.Count)] Restoring: $($taskList[$i].N)"
-                $controls.txtConsoleStatus.Text = "Processing $($taskList[$i].N)..."
-                $window.Dispatcher.Invoke([action]{}, "Render")
-                try { & $taskList[$i].A } catch { Write-Log "Error in $($taskList[$i].N): $($_.Exception.Message)" -Level Error }
-                $controls.progressBar.Value = $i + 1
-                $controls.txtChanges.Text = "$($script:ChangesCount)"
-                $controls.txtErrors.Text = "$($script:ErrorsCount)"
-                $window.Dispatcher.Invoke([action]{}, "Render")
-            }
-            
-            Write-Log "=== Restoration Complete ===" -Level Section
-            Write-Log "$($script:ChangesCount) changes applied, $($script:ErrorsCount) errors" -Level Info
-            Write-Log "Log saved: $($script:LogPath)" -Level Info
-            
-            $controls.txtStatus.Text = "Complete! $($script:ChangesCount) changes, $($script:ErrorsCount) errors"
-            $controls.txtConsoleStatus.Text = "Finished - restart recommended"
-            $controls.txtChanges.Text = "$($script:ChangesCount)"
-            $controls.txtErrors.Text = "$($script:ErrorsCount)"
-            $controls.progressBar.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#3fb950')
-            $controls.btnCancel.IsEnabled = $true
-            $controls.btnCancel.Content = "Close"
-            
-            [System.Windows.MessageBox]::Show(
-                "Restoration complete!`n`nChanges: $($script:ChangesCount)`nErrors: $($script:ErrorsCount)`n`nPlease restart your computer to apply all changes.`n`nLog saved to:`n$($script:LogPath)",
-                "Restoration Complete", "OK", "Information")
+            Write-Log "" -Level Info
+            Write-Log "=== PREVIEW COMPLETE ===" -Level Section
+            $ui.txtProgressTitle.Text = "Preview complete"
+            $ui.txtProgressSub.Text = "$($selectedKeys.Count) categories would be restored"
+            $ui.progressBar.Value = $ui.progressBar.Maximum
+            $ui.txtProgressPercent.Text = "Done"
+            $ui.txtStatus.Text = "No changes were made (preview only)"
+            $ui.btnLater.Content = "Close"; $ui.btnLater.Visibility = "Visible"
+            $ui.btnViewLog.Visibility = "Visible"
+            $window.Dispatcher.Invoke([action]{}, "Render")
+            return
         }
+
+        # ---- ACTUAL RESTORATION ----
+        $ui.progressBar.Maximum = $selectedKeys.Count
+        $total = $selectedKeys.Count; $i = 0
+        foreach ($key in $selectedKeys) {
+            $i++
+            $fn = $friendlyMap[$key]; if (!$fn) { $fn = $key }
+            $pct = [math]::Round(($i / $total) * 100)
+            $ui.progressBar.Value = $i
+            $ui.txtProgressPercent.Text = "$pct%"
+            $ui.txtProgressStep.Text = "($i of $total) $fn"
+            $ui.txtProgressSub.Text = "Fixing: $fn"
+            $window.Dispatcher.Invoke([action]{}, "Render")
+
+            $script:CurrentCategory = $fn
+            $script:CategoryResults[$fn] = @{ Status="OK"; Changed=0; Errors=0 }
+            try {
+                & $funcMap[$key]
+                if ($script:CategoryResults[$fn].Changed -gt 0) { $script:CategoryResults[$fn].Status = "Fixed" }
+                else { $script:CategoryResults[$fn].Status = "Already OK" }
+            } catch {
+                $script:CategoryResults[$fn].Status = "Error"
+                $script:CategoryResults[$fn].Errors++
+                Write-Log "Error in $fn : $($_.Exception.Message)" -Level Error
+            }
+            $window.Dispatcher.Invoke([action]{}, "Render")
+        }
+        $script:CurrentCategory = ""
+
+        # ---- SUMMARY ----
+        Write-Log "" -Level Info
+        Write-Log "=== RESTORATION SUMMARY ===" -Level Section
+        $fixed   = @($script:CategoryResults.Values | Where-Object { $_.Status -eq "Fixed" }).Count
+        $already = @($script:CategoryResults.Values | Where-Object { $_.Status -eq "Already OK" }).Count
+        $errored = @($script:CategoryResults.Values | Where-Object { $_.Status -eq "Error" }).Count
+        Write-Log "Fixed: $fixed | Already OK: $already | Errors: $errored | Total changes: $script:ChangesCount" -Level Info
+        Write-Log "" -Level Info
+        foreach ($cat in $script:CategoryResults.GetEnumerator()) {
+            $icon = switch ($cat.Value.Status) { "Fixed"{"[FIXED]"}; "Already OK"{"[ OK ]"}; "Error"{"[FAIL]"}; default{"[----]"} }
+            $lvl = switch ($cat.Value.Status) { "Fixed"{"Success"}; "Error"{"Error"}; default{"Info"} }
+            $det = if ($cat.Value.Changed -gt 0) { " ($($cat.Value.Changed) changes)" } else { "" }
+            Write-Log "$icon $($cat.Key)$det" -Level $lvl
+        }
+        Write-Log "" -Level Info
+        Write-Log "Log saved: $(Split-Path $script:LogPath -Leaf)" -Level Info
+        Write-Log "" -Level Section
+        Write-Log "WHAT TO DO NEXT:" -Level Section
+        Write-Log "1. Click 'Reboot Now' to finish applying changes" -Level Info
+        Write-Log "2. After reboot, check that Defender and Firewall are on" -Level Info
+        Write-Log "3. Run Windows Update to get latest security patches" -Level Info
+        Write-Log "4. If anything is wrong, use System Restore to undo" -Level Info
+
+        try { [System.Media.SystemSounds]::Exclamation.Play() } catch { }
+
+        $ui.txtProgressTitle.Text = "All done! Your PC has been restored."
+        $parts = @()
+        if ($fixed -gt 0) { $parts += "$fixed fixed" }
+        if ($already -gt 0) { $parts += "$already already OK" }
+        if ($errored -gt 0) { $parts += "$errored errors" }
+        $ui.txtProgressSub.Text = ($parts -join "  |  ")
+        $ui.progressBar.Value = $ui.progressBar.Maximum
+        $ui.txtProgressPercent.Text = "Complete"; $ui.txtProgressStep.Text = ""
+        $ui.txtStatus.Text = "Please reboot to finish applying changes"
+        $ui.btnReboot.Visibility = "Visible"; $ui.btnLater.Visibility = "Visible"; $ui.btnViewLog.Visibility = "Visible"
+        $window.Dispatcher.Invoke([action]{}, "Render")
+    }
+
+    # ================================================================
+    # WIRE EVENTS
+    # ================================================================
+    $ui.btnFixAll.Add_MouseLeftButtonUp({
+        $r = [System.Windows.MessageBox]::Show(
+            "This will restore your PC to factory Windows defaults.`n`nWhat it does:`n  - Turns security back on (Defender, Firewall, SmartScreen)`n  - Re-enables Windows Update and system services`n  - Removes debloat registry tweaks and host blocks`n  - Keeps your current dark theme`n  - Does NOT reinstall removed apps`n`nA restore point will be created first so you can undo.`n`nEstimated time: 1-3 minutes`n`nContinue?",
+            "Recommended Fix", "YesNo", "Question")
+        if ($r -eq "Yes") { & $runRestore $safeDefaults $ui.chkAutoRestore.IsChecked $false }
     })
-    
-    # Initial console messages
-    Write-Log "=== Windows Restoration Tool v$($script:Version) ===" -Level Section
-    Write-Log "Ready - select categories and click Restore" -Level Info
-    Write-Log "Tip: Create a restore point before making changes" -Level Warning
-    
+
+    $ui.btnFixDetected.Add_MouseLeftButtonUp({
+        if (!$detectedKeys.Count) {
+            [System.Windows.MessageBox]::Show("No issues were detected by the scanner.`nYour system looks healthy!", "Nothing to Fix", "OK", "Information")
+            return
+        }
+        $msg = "Fix only the $($detectedKeys.Count) categories where problems were found:`n`n"
+        foreach ($k in $detectedKeys) { $fn = $friendlyMap[$k]; if ($fn) { $msg += "  - $fn`n" } }
+        $msg += "`nEstimated time: Under 1 minute`n`nContinue?"
+        $r = [System.Windows.MessageBox]::Show($msg, "Fix Detected Issues", "YesNo", "Question")
+        if ($r -eq "Yes") { & $runRestore $detectedKeys $ui.chkAutoRestore.IsChecked $false }
+    })
+
+    $ui.btnFixSecurity.Add_MouseLeftButtonUp({
+        $r = [System.Windows.MessageBox]::Show(
+            "This ONLY fixes your security settings:`n`n  - Windows Defender (antivirus protection)`n  - Windows Firewall (network protection)`n  - SmartScreen (blocks dangerous downloads)`n  - Windows Update (keeps your PC up to date)`n  - UAC (asks before making big changes)`n  - Security protocols and Windows Security app`n`nEverything else stays exactly how it is.`n`nEstimated time: Under 1 minute`n`nContinue?",
+            "Security Fix", "YesNo", "Question")
+        if ($r -eq "Yes") { & $runRestore $securityOnly $ui.chkAutoRestore.IsChecked $false }
+    })
+
+    $ui.btnCustom.Add_MouseLeftButtonUp({
+        $ui.pageHome.Visibility = "Collapsed"; $ui.pageCustom.Visibility = "Visible"
+    })
+
+    $ui.btnScanOnly.Add_MouseLeftButtonUp({ & $runRestore $safeDefaults $false $true })
+
+    $ui.btnBack.Add_Click({ $ui.pageCustom.Visibility = "Collapsed"; $ui.pageHome.Visibility = "Visible" })
+
+    $ui.btnRunCustom.Add_Click({
+        $sel = @()
+        foreach ($chk in $allChkNames) { if ($ui[$chk] -and $ui[$chk].IsChecked) { $sel += $chk } }
+        if (!$sel.Count) {
+            [System.Windows.MessageBox]::Show("Select at least one category.", "Nothing Selected", "OK", "Information"); return
+        }
+        $r = [System.Windows.MessageBox]::Show("Restore $($sel.Count) categories?", "Confirm", "YesNo", "Question")
+        if ($r -eq "Yes") { & $runRestore $sel $ui.chkAutoRestoreC.IsChecked $false }
+    })
+
+    $ui.btnSelectAll.Add_Click({ foreach ($c in $allChkNames) { if ($ui[$c]) { $ui[$c].IsChecked = $true } } })
+    $ui.btnSelectNone.Add_Click({ foreach ($c in $allChkNames) { if ($ui[$c]) { $ui[$c].IsChecked = $false } } })
+    $ui.btnSelectSafe.Add_Click({
+        foreach ($c in $allChkNames) { if ($ui[$c]) { $ui[$c].IsChecked = ($c -ne "chkTheme" -and $c -ne "chkAppx") } }
+    })
+
+    $ui.btnClose.Add_Click({ $window.Close() })
+    $ui.btnReboot.Add_Click({
+        $r = [System.Windows.MessageBox]::Show("Your PC will restart now.`nMake sure you have saved any open work.", "Reboot", "OKCancel", "Warning")
+        if ($r -eq "OK") { $window.Close(); Restart-Computer -Force }
+    })
+    $ui.btnLater.Add_Click({ $window.Close() })
+    $ui.btnViewLog.Add_Click({ if (Test-Path $script:LogPath) { Start-Process notepad.exe $script:LogPath } })
+
     $window.ShowDialog() | Out-Null
 }
 
 # ============================================================================
-# MAIN ENTRY POINT
+# ENTRY POINT
 # ============================================================================
 
-Write-Log "=== Windows Restoration Tool v$($script:Version) ===" -Level Section
 Show-MainWindow
