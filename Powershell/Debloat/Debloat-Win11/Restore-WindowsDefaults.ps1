@@ -2447,7 +2447,7 @@ function Show-MainWindow {
     # ================================================================
     # STATIC XAML - single-quoted here-string prevents variable expansion
     # ================================================================
-    [xml]$xaml = @'
+    $xamlString = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Windows Restore Tool" Width="920" Height="740"
@@ -2510,7 +2510,9 @@ function Show-MainWindow {
                     <Border Background="#161b22" CornerRadius="6" Padding="12,8" BorderBrush="#30363d" BorderThickness="1">
                         <StackPanel>
                             <TextBlock x:Name="txtHealthSummary" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                            <StackPanel x:Name="scanResults"/>
+                            <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="scanResults"/>
+                            </ScrollViewer>
                             <TextBlock x:Name="txtScanHint" Foreground="#484f58" FontSize="10" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>
@@ -2646,19 +2648,30 @@ function Show-MainWindow {
 </Window>
 '@
 
-    # ---- Load window ----
+    # ---- Load window using Parse() which properly registers NameScope ----
     try {
-        $reader = New-Object System.Xml.XmlNodeReader $xaml
-        $window = [Windows.Markup.XamlReader]::Load($reader)
+        $window = [System.Windows.Markup.XamlReader]::Parse($xamlString)
     } catch {
         [System.Windows.MessageBox]::Show("UI failed to load: $($_.Exception.Message)", "Error", "OK", "Error")
         return
     }
 
     # ---- Find named controls ----
+    # With XamlReader.Parse(), FindName works correctly
     $ui = @{}
-    $xaml.SelectNodes("//*[@*[contains(translate(name(),'X','x'),'x:name')]]") | ForEach-Object {
-        $n = $_.Name; if (!$n) { $n = $_."x:Name" }; if ($n) { $ui[$n] = $window.FindName($n) }
+    $controlNames = @(
+        'pageHome', 'pageCustom', 'pageProgress',
+        'txtHealthSummary', 'scanResults', 'txtScanHint', 'txtDetectedCount',
+        'btnFixAll', 'btnFixDetected', 'btnFixSecurity', 'btnCustom', 'btnScanOnly',
+        'chkAutoRestore', 'btnClose',
+        'btnBack', 'btnSelectAll', 'btnSelectNone', 'btnSelectSafe',
+        'chkContainer', 'chkAutoRestoreC', 'btnRunCustom',
+        'txtProgressTitle', 'txtProgressSub', 'progressBar', 'txtProgressPercent', 'txtProgressStep',
+        'txtConsole', 'txtStatus', 'btnReboot', 'btnLater', 'btnViewLog'
+    )
+    foreach ($name in $controlNames) {
+        $ctrl = $window.FindName($name)
+        if ($ctrl) { $ui[$name] = $ctrl }
     }
     $script:ConsoleBox = $ui.txtConsole
     $script:ConsoleWindow = $window
