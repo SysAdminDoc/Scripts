@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Claude Ultimate Enhancer
 // @namespace    https://github.com/SysAdminDoc
-// @version      1.1.0
-// @description  All-in-one Claude.ai enhancement suite - theme engine, usage monitor, prompt library, auto-scroll, DOM trimmer, visual upgrades, API-powered chat export (JSON/ZIP), and more
+// @version      1.3.0
+// @description  All-in-one Claude.ai enhancement suite - theme engine, usage monitor, prompt manager, AutoBuild workflow automation, lockable/resizable panel, auto-scroll, DOM trimmer, visual upgrades, API-powered chat export (JSON/ZIP), and more
 // @author       SysAdminDoc
 // @match        https://claude.ai/*
 // @grant        GM_getValue
@@ -18,9 +18,20 @@
     if (window.__claudeUltimateLoaded) return;
     window.__claudeUltimateLoaded = true;
 
-    const VERSION = '1.1.0';
+    const VERSION = '1.3.0';
     const PREFIX = 'cue';
     const LOG_TAG = '[CUE]';
+
+    // =====================================================================
+    //  TRUSTED TYPES (CSP compatibility)
+    // =====================================================================
+    let _trustedPolicy = null;
+    if (typeof window.trustedTypes !== 'undefined' && window.trustedTypes.createPolicy) {
+        try { _trustedPolicy = window.trustedTypes.createPolicy('cue-policy', { createHTML: (input) => input }); }
+        catch (e) { /* policy already exists or unsupported */ }
+    }
+    function safeHTML(html) { return _trustedPolicy ? _trustedPolicy.createHTML(html) : html; }
+    function setSafeHTML(el, html) { if (!el) return; el.innerHTML = safeHTML(html); }
 
     // =====================================================================
     //  SETTINGS MANAGER
@@ -40,11 +51,6 @@
             coloredBoldItalic: true,
             smoothAnimations: true,
             customScrollbar: true,
-            // -- Usage Monitor --
-            usageMonitor: true,
-            usageFetchInterval: 300,   // seconds between API polls
-            // -- Feature Toggles --
-            featureToggles: true,
             // -- DOM Trimmer --
             domTrimmer: false,
             domKeepVisible: 20,
@@ -54,19 +60,20 @@
             // -- Export --
             exportBranchMode: false,
             exportIncludeImages: false,
+            // -- Panel --
+            panelWidth: 310,
+            panelLocked: false,
             // -- Prompt Library --
             promptLibrary: true,
             // -- Response Monitor --
             responseMonitor: true,
             notifySound: true,
             notifyFlash: true,
-            // -- Keyboard Shortcuts --
-            shortcuts: true,
             // -- Paste Fix --
             pasteFix: true,
-            // -- Panel --
-            panelPosition: 'bottom-right',
-            panelCollapsed: true,
+            // -- AutoBuild --
+            autoBuildContinueDelay: 8,   // seconds to wait after completion before sending next step
+            autoBuildMaxRetries: 2,      // max "continue" retries before escalating to phased approach
         },
         get(key) {
             if (key in this._cache) return this._cache[key];
@@ -87,7 +94,12 @@
         },
         defaults() { return { ...this._defaults }; },
         reset() {
-            Object.keys(this._defaults).forEach(k => this.set(k, this._defaults[k]));
+            // Batch: write all defaults without emitting individual events
+            Object.keys(this._defaults).forEach(k => {
+                this._cache[k] = this._defaults[k];
+                GM_setValue(PREFIX + '_' + k, this._defaults[k]);
+            });
+            EventBus.emit('settings:reset');
         }
     };
 
@@ -123,20 +135,6 @@
         const s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
         return h > 0 ? `${h}h ${m % 60}m` : m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
     };
-    const ts = () => new Date().toLocaleTimeString('en', { hour12: false });
-
-    function waitForElement(sel, timeout = 15000) {
-        return new Promise((resolve, reject) => {
-            const el = $(sel);
-            if (el) return resolve(el);
-            const obs = new MutationObserver(() => {
-                const el = $(sel);
-                if (el) { obs.disconnect(); clearTimeout(t); resolve(el); }
-            });
-            obs.observe(document.documentElement, { childList: true, subtree: true });
-            const t = setTimeout(() => { obs.disconnect(); reject(new Error('Timeout: ' + sel)); }, timeout);
-        });
-    }
 
     function injectCSS(id, css) {
         let el = document.getElementById(id);
@@ -225,14 +223,30 @@
     //  CLAUDE API HELPERS
     // =====================================================================
     const ClaudeAPI = {
-        async getOrgs() {
-            const r = await fetch('/api/organizations', { credentials: 'include' });
-            return r.json();
+        _orgIdCache: null,
+
+        async getOrgId() {
+            if (this._orgIdCache) return this._orgIdCache;
+            const saved = localStorage.getItem('cue_orgId');
+            if (saved) { this._orgIdCache = saved; return saved; }
+            try {
+                const r = await fetch('/api/organizations', { credentials: 'include' });
+                const orgs = await r.json();
+                if (orgs[0]?.uuid) {
+                    this._orgIdCache = orgs[0].uuid;
+                    localStorage.setItem('cue_orgId', this._orgIdCache);
+                    return this._orgIdCache;
+                }
+            } catch (e) { /* ignore */ }
+            return null;
+        },
+        setOrgId(id) {
+            this._orgIdCache = id;
+            localStorage.setItem('cue_orgId', id);
         },
         async getUsage() {
             try {
-                const orgs = await this.getOrgs();
-                const orgId = orgs[0]?.uuid;
+                const orgId = await this.getOrgId();
                 if (!orgId) return null;
                 const r = await fetch(`/api/organizations/${orgId}/usage`, { credentials: 'include' });
                 return r.json();
@@ -274,6 +288,15 @@
             const origFetch = window.fetch;
             const self = this;
             window.fetch = async function (...args) {
+                // Capture org ID from any API call (#1: single fetch wrapper)
+                try {
+                    const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+                    const match = url.match(/\/api\/organizations\/([a-f0-9-]+)\//);
+                    if (match && match[1]) {
+                        ClaudeAPI.setOrgId(match[1]);
+                        ExportModule._orgId = match[1];
+                    }
+                } catch (e) { /* ignore */ }
                 const response = await origFetch.apply(this, args);
                 try {
                     const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
@@ -315,15 +338,6 @@
             if (data.message_limit !== undefined) {
                 this.lastMessageLimit = data.message_limit;
                 EventBus.emit('stream:messageLimit', data.message_limit);
-            }
-            // Direct utilization value
-            if (data.utilization !== undefined && typeof data.utilization === 'number') {
-                EventBus.emit('stream:utilization', data.utilization);
-            }
-            // Token usage data
-            if (data.usage) {
-                this.lastUsage = data.usage;
-                EventBus.emit('stream:usage', data.usage);
             }
             // Message limit within_limit type
             if (data.type === 'message_limit' && data.message_limit?.type === 'within_limit') {
@@ -400,6 +414,12 @@
             }
             const theme = this.THEMES[Settings.get('themeVariant')];
             if (!theme) { removeCSS(PREFIX + '-theme'); return; }
+            // Detect if dark mode is active — warn once if not
+            const root = document.documentElement;
+            if (root && root.dataset.mode && root.dataset.mode !== 'dark' && !this._lightWarnShown) {
+                this._lightWarnShown = true;
+                setTimeout(() => showToast('CUE themes are designed for dark mode — switch to dark mode in Claude settings for best results', 5000, 'warn'), 3000);
+            }
             const fontCSS = Settings.get('fontOverride') ? `
                 :root { --font-anthropic-serif: var(--font-anthropic-sans) !important; --font-ui-serif: var(--font-ui) !important; }
             ` : '';
@@ -521,11 +541,13 @@
 
         _colorBoldElements() {
             if (!Settings.get('coloredBoldItalic')) return;
-            $$('b:not([data-cue-styled]), strong:not([data-cue-styled])').forEach(el => {
+            const scope = document.querySelector('.font-claude-message, [class*="prose"]');
+            const root = scope || document.querySelector('main') || document.body;
+            root.querySelectorAll('b:not([data-cue-styled]), strong:not([data-cue-styled])').forEach(el => {
                 el.setAttribute('data-cue-styled', '1');
                 el.style.setProperty('color', this.COLORS.green, 'important');
             });
-            $$('i:not([data-cue-styled]), em:not([data-cue-styled])').forEach(el => {
+            root.querySelectorAll('i:not([data-cue-styled]), em:not([data-cue-styled])').forEach(el => {
                 el.setAttribute('data-cue-styled', '1');
                 el.style.setProperty('color', this.COLORS.skyblue, 'important');
             });
@@ -536,13 +558,14 @@
             let timer;
             this._boldObserver = new MutationObserver(() => {
                 clearTimeout(timer);
-                timer = setTimeout(() => this._colorBoldElements(), 200);
+                timer = setTimeout(() => this._colorBoldElements(), 300);
             });
             const start = () => {
-                if (document.body) this._boldObserver.observe(document.body, { childList: true, subtree: true });
-                else setTimeout(start, 200);
+                const root = document.querySelector('main') || document.body;
+                this._boldObserver.observe(root, { childList: true, subtree: true });
             };
-            start();
+            if (document.querySelector('main')) start();
+            else setTimeout(start, 500);
         },
 
         _applyAnimations() {
@@ -579,10 +602,11 @@
     const PasteFixModule = {
         id: 'pasteFix',
         _handler: null,
+        _dispatching: false,
 
         init() {
             this._handler = (e) => {
-                if (!Settings.get('pasteFix')) return;
+                if (!Settings.get('pasteFix') || this._dispatching) return;
                 const cd = e.clipboardData || window.clipboardData;
                 if (cd.types.includes('text/plain') && cd.types.includes('text/html')) {
                     e.preventDefault();
@@ -590,7 +614,9 @@
                     const plain = cd.getData('text/plain');
                     const dt = new DataTransfer();
                     dt.setData('text/plain', plain.trimStart());
+                    this._dispatching = true;
                     e.target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+                    this._dispatching = false;
                 }
             };
             document.addEventListener('paste', this._handler, true);
@@ -607,17 +633,50 @@
         id: 'autoScroll',
         _observer: null,
         _timer: null,
+        _scrollEl: null,
+        _scrollElTime: 0,
 
         init() {
             this._start();
             EventBus.on('setting:autoScroll', (v) => v ? this._start() : this._stop());
+            EventBus.on('navigation', () => { this._scrollEl = null; });
+        },
+
+        _findScrollContainer() {
+            // Cache for 5s to avoid repeated DOM walks
+            if (this._scrollEl && document.contains(this._scrollEl) && Date.now() - this._scrollElTime < 5000) return this._scrollEl;
+            // Strategy 1: look inside main for the deepest scrollable element
+            const main = document.querySelector('main');
+            if (main) {
+                // Walk candidates: elements that have scrollable overflow and meaningful height
+                const candidates = main.querySelectorAll('div');
+                let best = null, bestDepth = -1;
+                for (const el of candidates) {
+                    if (el.scrollHeight > el.clientHeight + 10 && el.clientHeight > 100) {
+                        const style = getComputedStyle(el);
+                        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+                            // Prefer the deepest (most specific) scrollable container
+                            let depth = 0;
+                            let p = el;
+                            while (p) { depth++; p = p.parentElement; }
+                            if (depth > bestDepth) { best = el; bestDepth = depth; }
+                        }
+                    }
+                }
+                if (best) { this._scrollEl = best; this._scrollElTime = Date.now(); return best; }
+                // Fallback: main itself might scroll
+                if (main.scrollHeight > main.clientHeight + 10) { this._scrollEl = main; this._scrollElTime = Date.now(); return main; }
+            }
+            return null;
         },
 
         scrollToBottom() {
-            for (const el of [document.querySelector('main'), document.querySelector('[class*="overflow-y"]'), document.querySelector('[class*="scroll"]')].filter(Boolean)) {
-                if (el.scrollHeight > el.clientHeight) { el.scrollTop = el.scrollHeight; return; }
+            const el = this._findScrollContainer();
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            } else {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
             }
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
         },
 
         _start() {
@@ -640,6 +699,7 @@
     const AutoApproveModule = {
         id: 'autoApprove',
         _observer: null,
+        _debounce: null,
 
         init() {
             this._start();
@@ -650,18 +710,28 @@
             if (this._observer) this._observer.disconnect();
             this._observer = new MutationObserver(() => {
                 if (!Settings.get('autoApprove')) return;
-                const dlg = $(SEL.dialogOpen) || $(SEL.dialog);
-                if (!dlg) return;
-                for (const btn of dlg.querySelectorAll('button')) {
-                    const t = btn.textContent.toLowerCase().trim();
-                    if (t.includes('allow for this chat') || t.includes('allow once') || t.includes('allow always')) {
-                        btn.click();
-                        showToast('Auto-approved: ' + btn.textContent.trim(), 2000, 'info');
-                        return;
-                    }
-                }
+                clearTimeout(this._debounce);
+                this._debounce = setTimeout(() => this._check(), 150);
             });
-            this._observer.observe(document.body, { childList: true, subtree: true });
+            this._observer.observe(document.body, { childList: true, subtree: false });
+            // Also observe direct children for portal mounts
+            const portalRoot = document.getElementById('__next') || document.body;
+            if (portalRoot !== document.body) {
+                this._observer.observe(portalRoot, { childList: true, subtree: false });
+            }
+        },
+
+        _check() {
+            const dlg = $(SEL.dialogOpen) || $(SEL.dialog);
+            if (!dlg) return;
+            for (const btn of dlg.querySelectorAll('button')) {
+                const t = btn.textContent.toLowerCase().trim();
+                if (t.includes('allow for this chat') || t.includes('allow once') || t.includes('allow always')) {
+                    btn.click();
+                    showToast('Auto-approved: ' + btn.textContent.trim(), 2000, 'info');
+                    return;
+                }
+            }
         },
 
         _stop() { if (this._observer) this._observer.disconnect(); },
@@ -669,68 +739,34 @@
     };
 
     // =====================================================================
-    //  MODULE: EXPORT (API-powered, from Lyra Exporter)
+    //  MODULE: EXPORT (API-powered)
     // =====================================================================
     const ExportModule = {
         id: 'export',
         _orgId: null,
-        LYRA_EXPORTER_URL: 'https://yalums.github.io/lyra-exporter/',
-        LYRA_EXPORTER_ORIGIN: 'https://yalums.github.io',
+        _exporting: false,
+        _convListCache: null,
+        _convListCacheTime: 0,
+        CONV_CACHE_TTL: 30000,
 
         init() {
-            this._captureOrgId();
+            // Org ID is captured by StreamMonitor's unified fetch wrapper and ClaudeAPI cache
+            const cached = ClaudeAPI._orgIdCache || localStorage.getItem('cue_orgId');
+            if (cached) this._orgId = cached;
         },
 
-        _captureOrgId() {
-            // Capture org ID from localStorage or ongoing fetches
-            const saved = localStorage.getItem('cue_orgId');
-            if (saved) this._orgId = saved;
-            // Also listen for it via the StreamMonitor's intercepted fetches
-            const origFetch = window.__cueFetchRef || window.fetch;
-            window.__cueFetchRef = origFetch;
-            const self = this;
-            // Intercept to capture org ID from any API call
-            const existing = window.fetch;
-            const capturer = function(...args) {
-                try {
-                    const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
-                    const match = url.match(/\/api\/organizations\/([a-f0-9-]+)\//);
-                    if (match && match[1] && !self._orgId) {
-                        self._orgId = match[1];
-                        localStorage.setItem('cue_orgId', match[1]);
-                    }
-                } catch (e) { /* ignore */ }
-                return existing.apply(this, args);
-            };
-            // Only wrap if StreamMonitor hasn't already wrapped with our capturer
-            if (!window.__cueExportCapture) {
-                window.__cueExportCapture = true;
-                window.fetch = capturer;
+        _setExportButtons(disabled) {
+            for (const id of ['export-json', 'export-md', 'export-all']) {
+                const btn = $(`#${PREFIX}-${id}`);
+                if (btn) { btn.disabled = disabled; btn.style.opacity = disabled ? '0.4' : ''; }
             }
         },
 
         async ensureOrgId() {
             if (this._orgId) return this._orgId;
-            // Try localStorage
-            const saved = localStorage.getItem('cue_orgId');
-            if (saved) { this._orgId = saved; return saved; }
-            // Try fetching orgs API
-            try {
-                const r = await fetch('/api/organizations', { credentials: 'include' });
-                const orgs = await r.json();
-                if (orgs[0]?.uuid) {
-                    this._orgId = orgs[0].uuid;
-                    localStorage.setItem('cue_orgId', this._orgId);
-                    return this._orgId;
-                }
-            } catch (e) { /* ignore */ }
-            // Manual entry fallback
-            const manual = prompt('Organization ID not detected.\nEnter your org ID (Settings > Account):');
-            if (manual?.trim()) {
-                this._orgId = manual.trim();
-                localStorage.setItem('cue_orgId', this._orgId);
-                return this._orgId;
-            }
+            const id = await ClaudeAPI.getOrgId();
+            if (id) { this._orgId = id; return id; }
+            showToast('Could not detect organization ID — try refreshing the page', 4000, 'error');
             return null;
         },
 
@@ -769,12 +805,19 @@
         },
 
         async getAllConversations() {
+            // #2: Cache with 30s TTL to avoid redundant full-list fetches
+            if (this._convListCache && (Date.now() - this._convListCacheTime < this.CONV_CACHE_TTL)) {
+                return this._convListCache;
+            }
             const orgId = await this.ensureOrgId();
             if (!orgId) return null;
             try {
                 const resp = await fetch(`/api/organizations/${orgId}/chat_conversations`, { credentials: 'include' });
                 if (!resp.ok) throw new Error('Fetch failed');
-                return await resp.json();
+                const data = await resp.json();
+                this._convListCache = data;
+                this._convListCacheTime = Date.now();
+                return data;
             } catch (e) {
                 console.error(LOG_TAG, 'getAllConversations error:', e);
                 return null;
@@ -809,11 +852,22 @@
             }
         },
 
+        _downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        },
+
         async exportCurrentJSON() {
+            if (this._exporting) { showToast('Export already in progress', 2000, 'warn'); return; }
             const uuid = this.getCurrentUUID();
             if (!uuid) { showToast('No conversation open (need /chat/ URL)', 3000, 'warn'); return; }
             const orgId = await this.ensureOrgId();
             if (!orgId) return;
+            this._exporting = true;
+            this._setExportButtons(true);
             showToast('Fetching conversation data...', 2000, 'info');
             try {
                 const includeImages = Settings.get('exportIncludeImages');
@@ -827,141 +881,93 @@
                     if (meta.project) data.project = meta.project;
                 }
                 const filename = `claude_${(data.name || 'conversation').replace(/[^a-z0-9]/gi, '_').substring(0, 80)}_${uuid.substring(0, 8)}.json`;
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = filename;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                this._downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), filename);
                 showToast('Exported: ' + filename, 3000, 'success');
             } catch (e) {
                 showToast('Export failed: ' + e.message, 4000, 'error');
+            } finally {
+                this._exporting = false;
+                this._setExportButtons(false);
             }
         },
 
         async exportAllZIP() {
+            if (this._exporting) { showToast('Export already in progress', 2000, 'warn'); return; }
             const orgId = await this.ensureOrgId();
             if (!orgId) return;
+            this._exporting = true;
+            this._setExportButtons(true);
             showToast('Detecting conversations...', 2000, 'info');
-            let allConvs;
             try {
-                allConvs = await this.getAllConversations();
+                this._convListCache = null; // force fresh list
+                const allConvs = await this.getAllConversations();
                 if (!allConvs || !Array.isArray(allConvs) || allConvs.length === 0) {
                     showToast('No conversations found', 3000, 'warn');
                     return;
                 }
-            } catch (e) {
-                showToast('Failed to list conversations: ' + e.message, 4000, 'error');
-                return;
-            }
-            const count = allConvs.length;
-            const input = prompt(`Found ${count} conversations.\nHow many recent conversations to export? (0 or empty = all):`, String(count));
-            if (input === null) { showToast('Export cancelled', 2000, 'info'); return; }
-            let exportCount = count;
-            const trimmed = input.trim();
-            if (trimmed && trimmed !== '0') {
-                const parsed = parseInt(trimmed, 10);
-                if (isNaN(parsed) || parsed < 0) { showToast('Invalid number', 2000, 'warn'); return; }
-                exportCount = Math.min(parsed, count);
-            }
-            const toExport = allConvs.slice(0, exportCount);
-            const includeImages = Settings.get('exportIncludeImages');
-            // Build individual JSON files and package as concatenated download
-            // (ZIP requires fflate; fall back to sequential downloads if unavailable)
-            showToast(`Exporting ${toExport.length} conversations...`, 3000, 'info');
-            const files = {};
-            for (let i = 0; i < toExport.length; i++) {
-                const conv = toExport[i];
-                if (i > 0 && i % 5 === 0) await sleep(0);
-                else if (i > 0) await sleep(300);
-                try {
-                    const data = await this.getConversation(conv.uuid, includeImages);
-                    if (data) {
-                        if (conv.project_uuid) data.project_uuid = conv.project_uuid;
-                        if (conv.project) data.project = conv.project;
-                        const title = (data.name || conv.uuid).replace(/[^a-z0-9]/gi, '_').substring(0, 80);
-                        const fname = `claude_${conv.uuid.substring(0, 8)}_${title}.json`;
-                        files[fname] = JSON.stringify(data, null, 2);
-                    }
-                } catch (e) { /* skip failed conv */ }
-                if ((i + 1) % 10 === 0 || i === toExport.length - 1) {
-                    showToast(`Exported ${i + 1}/${toExport.length}...`, 2000, 'info');
-                }
-            }
-            const fileCount = Object.keys(files).length;
-            if (fileCount === 0) { showToast('No conversations exported', 3000, 'warn'); return; }
-            // Try ZIP with fflate if available
-            if (typeof fflate !== 'undefined' && fflate.zipSync && fflate.strToU8) {
-                const zipEntries = {};
-                for (const [name, content] of Object.entries(files)) {
-                    zipEntries[name] = fflate.strToU8(content);
-                }
-                const zipped = fflate.zipSync(zipEntries, { level: 6 });
-                const blob = new Blob([zipped], { type: 'application/zip' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `claude_export_${new Date().toISOString().slice(0, 10)}.zip`;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast(`Exported ${fileCount} conversations as ZIP!`, 3500, 'success');
-            } else {
-                // Fallback: download as single combined JSON
-                const combined = Object.values(files).map(f => JSON.parse(f));
-                const blob = new Blob([JSON.stringify(combined, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `claude_export_all_${new Date().toISOString().slice(0, 10)}.json`;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast(`Exported ${fileCount} conversations as JSON! (Install fflate for ZIP)`, 4000, 'success');
-            }
-        },
-
-        async previewInLyra() {
-            const uuid = this.getCurrentUUID();
-            if (!uuid) { showToast('No conversation open', 3000, 'warn'); return; }
-            showToast('Fetching for Lyra preview...', 2000, 'info');
-            try {
+                const toExport = allConvs;
+                showToast(`Exporting ${toExport.length} conversations...`, 3000, 'info');
                 const includeImages = Settings.get('exportIncludeImages');
-                const [data, meta] = await Promise.all([
-                    this.getConversation(uuid, includeImages),
-                    this.getConversationMeta(uuid)
-                ]);
-                if (!data) throw new Error('Failed to fetch conversation');
-                if (meta) {
-                    if (meta.project_uuid) data.project_uuid = meta.project_uuid;
-                    if (meta.project) data.project = meta.project;
-                }
-                const jsonString = JSON.stringify(data, null, 2);
-                const filename = `claude_${(data.name || 'conversation').replace(/[^a-z0-9]/gi, '_').substring(0, 80)}_${uuid.substring(0, 8)}.json`;
-                const exporterWindow = window.open(this.LYRA_EXPORTER_URL, '_blank');
-                if (!exporterWindow) {
-                    showToast('Popup blocked! Allow popups for claude.ai', 4000, 'error');
-                    return;
-                }
-                const checkInterval = setInterval(() => {
-                    try { exporterWindow.postMessage({ type: 'LYRA_HANDSHAKE', source: 'cue-script' }, this.LYRA_EXPORTER_ORIGIN); } catch (e) { /* cross-origin expected */ }
-                }, 1000);
-                const handleMessage = (event) => {
-                    if (event.origin !== this.LYRA_EXPORTER_ORIGIN) return;
-                    if (event.data?.type === 'LYRA_READY') {
-                        clearInterval(checkInterval);
-                        exporterWindow.postMessage({
-                            type: 'LYRA_LOAD_DATA', source: 'cue-script',
-                            data: { content: jsonString, filename }
-                        }, this.LYRA_EXPORTER_ORIGIN);
-                        window.removeEventListener('message', handleMessage);
-                        showToast('Sent to Lyra Exporter!', 2500, 'success');
+                const CHUNK_SIZE = 50;
+                const hasZip = typeof fflate !== 'undefined' && fflate.zipSync && fflate.strToU8;
+                const allChunkBlobs = [];
+                let exported = 0, failed = 0;
+                for (let chunk = 0; chunk < toExport.length; chunk += CHUNK_SIZE) {
+                    const batch = toExport.slice(chunk, chunk + CHUNK_SIZE);
+                    const files = {};
+                    for (let i = 0; i < batch.length; i++) {
+                        const conv = batch[i];
+                        if (i > 0 && i % 5 === 0) await sleep(0);
+                        else if (i > 0) await sleep(300);
+                        try {
+                            const data = await this.getConversation(conv.uuid, includeImages);
+                            if (data) {
+                                if (conv.project_uuid) data.project_uuid = conv.project_uuid;
+                                if (conv.project) data.project = conv.project;
+                                const title = (data.name || conv.uuid).replace(/[^a-z0-9]/gi, '_').substring(0, 80);
+                                const fname = `claude_${conv.uuid.substring(0, 8)}_${title}.json`;
+                                files[fname] = JSON.stringify(data, null, 2);
+                                exported++;
+                            }
+                        } catch (e) { failed++; }
+                        if ((exported + failed) % 5 === 0 || (chunk + i) === toExport.length - 1) {
+                            showToast(`Exporting ${exported + failed}/${toExport.length}...`, 2000, 'info');
+                        }
                     }
-                };
-                window.addEventListener('message', handleMessage);
-                setTimeout(() => { clearInterval(checkInterval); window.removeEventListener('message', handleMessage); }, 30000);
+                    if (hasZip) {
+                        const zipEntries = {};
+                        for (const [name, content] of Object.entries(files)) zipEntries[name] = fflate.strToU8(content);
+                        allChunkBlobs.push({ entries: zipEntries });
+                    } else {
+                        for (const [name, content] of Object.entries(files)) allChunkBlobs.push({ name, content });
+                    }
+                }
+                if (hasZip) {
+                    // Merge all chunk entries into one ZIP
+                    const merged = {};
+                    for (const c of allChunkBlobs) Object.assign(merged, c.entries);
+                    const fileCount = Object.keys(merged).length;
+                    if (fileCount === 0) { showToast('No conversations exported', 3000, 'warn'); return; }
+                    const zipped = fflate.zipSync(merged, { level: 6 });
+                    this._downloadBlob(new Blob([zipped], { type: 'application/zip' }), `claude_export_${new Date().toISOString().slice(0, 10)}.zip`);
+                    showToast(`Exported ${fileCount} conversations as ZIP${failed ? ` (${failed} failed)` : ''}!`, 3500, 'success');
+                } else {
+                    // Fallback: combined JSON
+                    const combined = allChunkBlobs.map(c => JSON.parse(c.content));
+                    if (combined.length === 0) { showToast('No conversations exported', 3000, 'warn'); return; }
+                    this._downloadBlob(new Blob([JSON.stringify(combined, null, 2)], { type: 'application/json' }), `claude_export_all_${new Date().toISOString().slice(0, 10)}.json`);
+                    showToast(`Exported ${combined.length} conversations as JSON (install fflate for ZIP)`, 4000, 'success');
+                }
             } catch (e) {
-                showToast('Preview failed: ' + e.message, 4000, 'error');
+                showToast('Export failed: ' + e.message, 4000, 'error');
+            } finally {
+                this._exporting = false;
+                this._setExportButtons(false);
             }
         },
 
         exportMarkdown() {
+            if (this._exporting) { showToast('Export already in progress', 2000, 'warn'); return; }
             const main = document.querySelector('main');
             if (!main) { showToast('No conversation found', 2000, 'warn'); return; }
             const groups = main.querySelectorAll(SEL.msgGroup);
@@ -972,12 +978,7 @@
                 const text = g.innerText.trim();
                 if (text) md += '## ' + (isUser ? 'Human' : 'Assistant') + '\n\n' + text + '\n\n---\n\n';
             });
-            const blob = new Blob([md], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'claude-chat-' + new Date().toISOString().slice(0, 10) + '.md';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            this._downloadBlob(new Blob([md], { type: 'text/markdown' }), 'claude-chat-' + new Date().toISOString().slice(0, 10) + '.md');
             showToast('Chat exported as Markdown!', 2000, 'success');
         },
 
@@ -991,12 +992,11 @@
         id: 'responseMonitor',
         _interval: null,
         _timerInterval: null,
-        _lastLen: 0,
-        _lastChangeTs: 0,
-        _stableCount: 0,
         _audioCtx: null,
         _flashTimer: null,
         _originalTitle: '',
+        _streamActive: false,
+        _pollFallbackCount: 0,
         status: 'idle',  // idle | generating | stuck | complete | truncated
         genStartTime: null,
         lastDuration: 0,
@@ -1004,46 +1004,64 @@
         lastChars: 0,
 
         init() {
-            this._lastChangeTs = Date.now();
-            this._interval = setInterval(() => this._poll(), 2000);
+            // Primary: stream events from fetch interceptor
+            EventBus.on('stream:start', () => this._onStreamStart());
+            EventBus.on('stream:stop', () => this._onStreamEnd());
+            EventBus.on('stream:end', () => { if (this._streamActive) this._onStreamEnd(); });
+            // Fallback: poll every 3s for edge cases where stream events don't fire
+            this._interval = setInterval(() => this._pollFallback(), 3000);
         },
 
-        _poll() {
+        _onStreamStart() {
             if (!Settings.get('responseMonitor')) return;
+            this._streamActive = true;
+            this._pollFallbackCount = 0;
+            if (this.status !== 'generating') {
+                this.genStartTime = Date.now();
+                this._startTimer();
+            }
+            this.status = 'generating';
+            EventBus.emit('response:status', this.status);
+        },
+
+        _onStreamEnd() {
+            if (!Settings.get('responseMonitor')) return;
+            this._streamActive = false;
+            // Small delay to let the DOM settle before reading the response
+            setTimeout(() => this._finalize(), 500);
+        },
+
+        _finalize() {
+            const resp = DOM.getLastResponse();
+            this.lastDuration = this.genStartTime ? Date.now() - this.genStartTime : 0;
+            this._stopTimer();
+            this.lastChars = resp.length;
+            this.lastWords = resp.split(/\s+/).filter(w => w.length > 0).length;
+            this.status = this._isTruncated(resp) ? 'truncated' : 'complete';
+            this.genStartTime = null;
+            EventBus.emit('response:status', this.status);
+            EventBus.emit('response:complete', { duration: this.lastDuration, words: this.lastWords, chars: this.lastChars });
+            if (Settings.get('autoScroll')) AutoScrollModule.scrollToBottom();
+            if (Settings.get('notifySound')) this._playSound();
+            if (Settings.get('notifyFlash')) this._flashTab();
+        },
+
+        _pollFallback() {
+            if (!Settings.get('responseMonitor') || this._streamActive) return;
             const gen = DOM.isGenerating();
-            const convo = (document.querySelector('main') || document.body).innerText;
-            const now = Date.now();
-            if (convo.length !== this._lastLen) { this._lastLen = convo.length; this._lastChangeTs = now; this._stableCount = 0; }
-            else { this._stableCount++; }
-            const wasGen = this.status === 'generating';
-            if (gen) {
-                if (this.status !== 'generating') {
-                    this.genStartTime = Date.now();
-                    this._startTimer();
-                }
-                this.status = 'generating';
-                if (Settings.get('autoScroll')) AutoScrollModule.scrollToBottom();
-                if (now - this._lastChangeTs > 90000) this.status = 'stuck';
-                EventBus.emit('response:status', this.status);
+            if (gen && this.status !== 'generating') {
+                // Stream events missed — fall back to DOM detection
+                this._pollFallbackCount++;
+                if (this._pollFallbackCount >= 2) this._onStreamStart();
+            } else if (!gen && this.status === 'generating') {
+                this._pollFallbackCount++;
+                if (this._pollFallbackCount >= 2) this._onStreamEnd();
+            } else {
+                this._pollFallbackCount = 0;
             }
-            else if (wasGen && this._stableCount >= 2) {
-                const resp = DOM.getLastResponse();
-                this.lastDuration = this.genStartTime ? Date.now() - this.genStartTime : 0;
-                this._stopTimer();
-                // Stats
-                this.lastChars = resp.length;
-                this.lastWords = resp.split(/\s+/).filter(w => w.length > 0).length;
-                this.status = this._isTruncated(resp) ? 'truncated' : 'complete';
-                this.genStartTime = null;
-                EventBus.emit('response:status', this.status);
-                EventBus.emit('response:complete', { duration: this.lastDuration, words: this.lastWords, chars: this.lastChars });
-                if (Settings.get('autoScroll')) AutoScrollModule.scrollToBottom();
-                // Notifications
-                if (Settings.get('notifySound')) this._playSound();
-                if (Settings.get('notifyFlash')) this._flashTab();
-            }
-            else if (!gen && this.status !== 'truncated' && this.status !== 'complete') {
-                this.status = 'idle';
+            // Stuck detection: generating for >90s with no stream end
+            if (this.status === 'generating' && this.genStartTime && Date.now() - this.genStartTime > 90000) {
+                this.status = 'stuck';
                 EventBus.emit('response:status', this.status);
             }
         },
@@ -1059,11 +1077,13 @@
         _isTruncated(text) {
             if (!text || text.length < 50) return false;
             const t = text.trim();
+            // Unclosed code fences are a strong signal
             if ((t.match(/```/g) || []).length % 2 !== 0) return true;
+            // Explicit truncation phrases in the tail
             const tail = t.toLowerCase().slice(-300);
-            for (const s of ['continue to keep the chat going', 'response was cut off', 'character limit', 'length limit', 'hit the limit']) { if (tail.includes(s)) return true; }
-            const ll = t.split('\n').filter(l => l.trim()).pop() || '';
-            if (!/[.!?:)`}\]>]$|COMPLETE$/i.test(ll.trim()) && !/[{;=,]$/.test(ll.trim()) && ll.length > 30) return true;
+            for (const s of ['response was cut off', 'character limit', 'length limit', 'hit the limit']) {
+                if (tail.includes(s)) return true;
+            }
             return false;
         },
 
@@ -1107,12 +1127,14 @@
     const DomTrimmerModule = {
         id: 'domTrimmer',
         _observer: null,
-        _cache: new Map(),
+        _trimTimer: null,
 
         init() {
             EventBus.on('setting:domTrimmer', (v) => { if (!v) this.restoreAll(); });
             this._observer = new MutationObserver(() => {
-                if (Settings.get('domTrimmer')) this._prune();
+                if (!Settings.get('domTrimmer')) return;
+                clearTimeout(this._trimTimer);
+                this._trimTimer = setTimeout(() => this._prune(), 500);
             });
             if (document.body) this._observer.observe(document.body, { childList: true, subtree: true });
         },
@@ -1120,45 +1142,43 @@
         _getMessages() {
             const main = $(SEL.main);
             if (!main) return [];
-            // Look for conversation message groups
             return $$('.group, [data-testid="user-message"]', main).map(el => {
-                // Walk up to find the actual removable container
                 let target = el;
                 while (target.parentElement && target.parentElement !== main && !target.parentElement.matches('main, [class*="flex-col"]')) {
                     target = target.parentElement;
                 }
                 return target;
-            }).filter((el, i, arr) => arr.indexOf(el) === i); // deduplicate
+            }).filter((el, i, arr) => arr.indexOf(el) === i);
         },
 
         _prune() {
             const msgs = this._getMessages();
             const keep = Settings.get('domKeepVisible');
             if (msgs.length <= keep) return;
-            const toRemove = msgs.slice(0, msgs.length - keep);
-            toRemove.forEach(el => {
+            const toHide = msgs.slice(0, msgs.length - keep);
+            let hiddenCount = 0;
+            toHide.forEach(el => {
                 if (el.dataset.cueTrimmed) return;
-                const id = 'trim-' + (this._cache.size + 1);
-                const placeholder = document.createElement('div');
-                placeholder.className = PREFIX + '-trim-placeholder';
-                placeholder.dataset.trimId = id;
-                placeholder.style.cssText = 'height:4px;margin:2px 0;background:rgba(128,128,128,0.1);border-radius:2px;';
-                this._cache.set(id, { html: el.outerHTML, parent: el.parentElement, next: el.nextSibling });
-                el.replaceWith(placeholder);
+                el.dataset.cueTrimmed = '1';
+                el.style.display = 'none';
+                hiddenCount++;
             });
-            EventBus.emit('trimmer:pruned', { removed: toRemove.length, total: msgs.length });
+            // Restore elements that should now be visible
+            const toShow = msgs.slice(msgs.length - keep);
+            toShow.forEach(el => {
+                if (el.dataset.cueTrimmed) {
+                    delete el.dataset.cueTrimmed;
+                    el.style.display = '';
+                }
+            });
+            if (hiddenCount > 0) EventBus.emit('trimmer:pruned', { hidden: hiddenCount, total: msgs.length });
         },
 
         restoreAll() {
-            this._cache.forEach((data, id) => {
-                const ph = $(`[data-trim-id="${id}"]`);
-                if (ph) {
-                    const tmp = document.createElement('div');
-                    tmp.innerHTML = data.html;
-                    ph.replaceWith(tmp.firstElementChild);
-                }
+            $$('[data-cue-trimmed]').forEach(el => {
+                delete el.dataset.cueTrimmed;
+                el.style.display = '';
             });
-            this._cache.clear();
             EventBus.emit('trimmer:restored');
         },
 
@@ -1174,54 +1194,62 @@
     const PromptModule = {
         id: 'promptLibrary',
         STORAGE_KEY: PREFIX + '_prompts',
+        CATEGORIES_KEY: PREFIX + '_categories',
         prompts: [],
+        categories: [],
 
         DEFAULT_PROMPTS: [
-            { id: 'spec', label: 'Spec', cat: 'pipeline', prompt: `You are now in **AUTOPILOT MODE**. A userscript monitors this chat and will send follow-up prompts.\n\n**PROJECT:**\n[DESCRIBE YOUR PROJECT HERE]\n\n**PROTOCOL:**\n1. End EVERY response with: \`STATUS: [STAGE] COMPLETE\` or \`STATUS: [STAGE] CONTINUING\`\n2. If cut off, I will send "CONTINUE" - pick up EXACTLY where you left off\n3. Write **production-ready, complete code** - NO placeholders, NO TODO stubs\n4. Include ALL imports, ALL error handling, ALL edge cases\n5. NEVER hallucinate packages - only use packages you are certain exist\n\n---\n\n**PHASE: SPECIFICATION**\n\nBefore ANY code, create a complete spec:\n1. **Requirements** - Functional + non-functional\n2. **User Stories** - 3-5 key stories\n3. **Inputs & Outputs** - Data flow\n4. **Edge Cases** - Boundary conditions, failure modes\n5. **Acceptance Criteria** - How we verify each feature\n6. **Security** - Auth, validation, sanitization needs\n7. **Dependencies** - Only packages you are 100% certain exist\n\nEnd with: \`STATUS: SPEC COMPLETE\`` },
-            { id: 'arch', label: 'Architecture', cat: 'pipeline', prompt: `AUTOPILOT: **ARCHITECTURE PHASE**\n\nDefine the technical architecture from the spec:\n1. **Tech Stack** - Language, frameworks, tools (justify each)\n2. **Project Structure** - Complete directory/file tree\n3. **Data Models** - All types, interfaces, schemas, enums\n4. **Component Map** - Module connections, dependency graph\n5. **API Surface** - Function signatures, entry points, CLI args\n6. **Configuration** - Settings, env vars, defaults\n7. **Error Strategy** - Error types, handling patterns\n\nEnd with: \`STATUS: ARCHITECTURE COMPLETE\`` },
-            { id: 'plan', label: 'Plan', cat: 'pipeline', prompt: `AUTOPILOT: **PLANNING PHASE**\n\nBreak implementation into numbered phases. Each must be self-contained and ordered by dependency (data models -> logic -> UI -> integration).\n\nFormat:\nPHASE 1: [Name] - [What gets built]\nPHASE 2: [Name] - [What gets built]\n...\n\nAlso list tests for each phase.\n\nEnd with: \`STATUS: PLAN COMPLETE\`` },
-            { id: 'build', label: 'Build Phase', cat: 'pipeline', prompt: `AUTOPILOT: Build **PHASE [N]** now.\n\nRefer to the plan. Write complete, production-ready code:\n- Complete file contents with ALL imports\n- Full error handling and input validation\n- Inline comments for non-obvious logic\n- Consistent with architecture above\n- Only real, verified packages\n\nEnd with: \`STATUS: PHASE [N] COMPLETE\`` },
-            { id: 'mid_audit', label: 'Mid Audit', cat: 'pipeline', prompt: `AUTOPILOT: **MID-BUILD AUDIT**\n\nReview ALL code so far:\n1. **Consistency** - Same patterns, naming, types across phases?\n2. **Integration** - Will phases connect? Mismatched signatures?\n3. **Missing imports** - Undefined references across files?\n4. **Data flow** - Data passes correctly between components?\n5. **Error handling** - Unhandled exceptions or silent failures?\n6. **Security** - Input validation, injection, exposed secrets?\n7. **Dependencies** - All packages real and correct versions?\n\nFix every issue. Show corrected code.\n\nEnd with: \`STATUS: MID_AUDIT COMPLETE\`` },
-            { id: 'testing', label: 'Testing', cat: 'pipeline', prompt: `AUTOPILOT: **TESTING PHASE**\n\nGenerate comprehensive test suite:\n1. **Unit Tests** - Each function/method independently\n2. **Integration Tests** - Component interactions\n3. **Edge Cases** - Boundary values, empty/malformed inputs\n4. **Error Paths** - Verify error handling works\n5. **Smoke Tests** - End-to-end happy path\n\nUse appropriate framework. Single-command runnable.\n\nEnd with: \`STATUS: TESTING COMPLETE\`` },
-            { id: 'final_audit', label: 'Final Audit', cat: 'pipeline', prompt: `AUTOPILOT: **FINAL AUDIT**\n\nComplete final review:\n1. **Code Quality** - Dead code, duplication, complexity\n2. **Security** - SQL injection, XSS, path traversal, hardcoded secrets, input validation\n3. **Completeness** - Compare against original spec\n4. **Performance** - Bottlenecks, N+1 queries, unbounded loops\n5. **Error Messages** - Helpful and user-friendly?\n6. **Documentation** - Functions documented? README complete?\n7. **Dependencies** - All packages real and necessary?\n8. **Cross-platform** - Works on Win/macOS/Linux?\n\nFix everything. Show corrected code.\n\nEnd with: \`STATUS: FINAL_AUDIT COMPLETE\`` },
-            { id: 'features', label: 'Features', cat: 'pipeline', prompt: `AUTOPILOT: **FEATURE ENHANCEMENT**\n\nAdd polish:\n1. Edge cases not yet handled\n2. UX/DX improvements - progress bars, colors, formatting\n3. Configuration - make hardcoded values configurable\n4. Logging - structured with levels\n5. Help/usage - --help, usage examples\n6. Graceful degradation - missing deps, network failures\n7. Performance - caching, lazy loading where applicable\n\nImplement all with complete code.\n\nEnd with: \`STATUS: FEATURES COMPLETE\`` },
-            { id: 'branding', label: 'Branding', cat: 'pipeline', prompt: `AUTOPILOT: **BRANDING PHASE**\n\n1. **AI Logo Prompt** - Detailed prompt for DALL-E 3 / Midjourney / Stable Diffusion to generate a professional logo\n2. **Color Palette** - 5-6 hex codes with names and usage\n3. **Tagline** - One-line project description\n4. **Icon Concepts** - 2-3 favicon/app icon ideas\n5. **ASCII Banner** - For CLI/README\n\nEnd with: \`STATUS: BRANDING COMPLETE\`` },
-            { id: 'packaging', label: 'Packaging', cat: 'pipeline', prompt: `AUTOPILOT: **PACKAGING PHASE**\n\n1. **Standalone Executable** - Best tool for language (PyInstaller/pkg/nexe/go build), build script, config, icon, metadata, one-command build\n2. **Portable Executable** - No install, runs from USB, self-contained, portable config\n3. **Build README** - Steps, prerequisites, troubleshooting\n4. **Release Script** - Automated build + package + hash\n\nEnd with: \`STATUS: PACKAGING COMPLETE\`` },
-            { id: 'summary', label: 'Summary', cat: 'pipeline', prompt: `AUTOPILOT: **FINAL SUMMARY**\n\n1. **File Manifest** - Every file, purpose, path\n2. **Quick Start** - 3 steps or fewer\n3. **Full Setup** - All platforms\n4. **Usage Guide** - Commands, flags, config, examples\n5. **Build Guide** - Standalone + portable compilation\n6. **Architecture Diagram** - ASCII component diagram\n7. **Tech Stack** - Languages, frameworks, tools, versions\n8. **Known Limitations** - Honest assessment\n9. **Future Roadmap** - Suggested next features\n\nEnd with: \`STATUS: PROJECT COMPLETE\`` },
-            { id: 'continue', label: 'Continue', cat: 'recovery', prompt: 'CONTINUE - Your response was cut off. Pick up EXACTLY where you stopped. Do not repeat anything.' },
-            { id: 'continue_ctx', label: 'Continue +Ctx', cat: 'recovery', prompt: 'CONTINUE - Your response was cut off. Check the roadmap/plan above, find where you stopped, and continue from that exact point. Do not restart or repeat.' },
-            { id: 'stuck', label: 'Stuck Recovery', cat: 'recovery', prompt: 'AUTOPILOT RECOVERY: Your last response appears stuck or incomplete.\n\nPlease check the conversation above, identify where you left off, and CONTINUE from that point. Do not restart.\n\nEnd with the appropriate STATUS line when done.' },
-            { id: 'next_phase', label: 'Next Phase', cat: 'recovery', prompt: 'AUTOPILOT: Previous phase done. Build the NEXT phase from the plan. Complete, production-ready code.\n\nEnd with: `STATUS: PHASE [N] COMPLETE`' },
-            { id: 'analyze', label: 'Analyze Chat', cat: 'resume', prompt: `AUTOPILOT: **RESUME MODE - PROJECT ANALYSIS**\n\nAnalyze the conversation above and determine:\n1. **Project** - What is being built?\n2. **Current State** - What has been completed?\n3. **Files Created** - All code produced so far\n4. **Last Phase** - What was last completed?\n5. **Next Steps** - What needs building?\n6. **Issues** - Incomplete code, broken refs, errors?\n\nProvide numbered remaining phases.\n\nEnd with: \`STATUS: ANALYSIS COMPLETE\`` },
-            { id: 'resume_build', label: 'Resume Build', cat: 'resume', prompt: 'AUTOPILOT: **RESUMING BUILD**\n\nContinue building from where the project left off. Build the next incomplete phase.\n\nWrite complete, production-ready code. NO placeholders. All imports, error handling.\n\nEnd with: `STATUS: PHASE COMPLETE`' },
-            { id: 'custom1', label: 'Custom 1', cat: 'custom', prompt: '' },
-            { id: 'custom2', label: 'Custom 2', cat: 'custom', prompt: '' },
-            { id: 'custom3', label: 'Custom 3', cat: 'custom', prompt: '' },
-            { id: 'custom4', label: 'Custom 4', cat: 'custom', prompt: '' },
+            // -- Writing --
+            { id: 'summarize', label: 'Summarize', cat: 'writing', prompt: 'Summarize the above concisely. Lead with the single most important takeaway, then cover key points in order of importance. Keep it brief.' },
+            { id: 'rewrite', label: 'Rewrite', cat: 'writing', prompt: 'Rewrite the above to be clearer, more concise, and more engaging. Preserve the original meaning and tone. Show only the rewritten version.' },
+            { id: 'proofread', label: 'Proofread', cat: 'writing', prompt: 'Proofread the above for grammar, spelling, punctuation, and clarity. List each issue found with the correction. Then provide the fully corrected version.' },
+            { id: 'simplify', label: 'Simplify', cat: 'writing', prompt: 'Explain the above in plain language that anyone could understand. Avoid jargon. Use short sentences and concrete examples.' },
+            { id: 'expand', label: 'Expand', cat: 'writing', prompt: 'Expand on the above with more detail, examples, and depth. Maintain the same style and tone. Add supporting evidence or context where appropriate.' },
+            { id: 'tone_pro', label: 'Professional', cat: 'writing', prompt: 'Rewrite the above in a professional, polished tone suitable for business communication. Remove casual language, tighten the structure, and keep it direct.' },
+            // -- Code --
+            { id: 'review', label: 'Code Review', cat: 'code', prompt: 'Review the code above. Check for:\n- Bugs, logic errors, edge cases\n- Security vulnerabilities\n- Performance issues\n- Code style and readability\n- Missing error handling\n\nList issues by severity (critical > warning > suggestion). For each issue, show the fix.' },
+            { id: 'debug', label: 'Debug', cat: 'code', prompt: 'The code above has a bug. Analyze it step by step:\n1. What is the expected behavior?\n2. What is actually happening?\n3. Where is the root cause?\n4. What is the fix?\n\nShow the corrected code.' },
+            { id: 'refactor', label: 'Refactor', cat: 'code', prompt: 'Refactor the code above for better readability, maintainability, and performance. Apply best practices for the language. Explain what you changed and why. Show the complete refactored code.' },
+            { id: 'tests', label: 'Write Tests', cat: 'code', prompt: 'Write comprehensive tests for the code above. Cover:\n- Happy path\n- Edge cases and boundary values\n- Error conditions\n- Input validation\n\nUse the most appropriate testing framework for the language.' },
+            { id: 'explain_code', label: 'Explain Code', cat: 'code', prompt: 'Explain the code above step by step. Cover what it does, how it works, and why key decisions were made. Assume I understand programming basics but am unfamiliar with this specific codebase.' },
+            { id: 'optimize', label: 'Optimize', cat: 'code', prompt: 'Optimize the code above for performance. Identify bottlenecks, reduce complexity, minimize memory usage, and apply language-specific optimizations. Show the optimized code with explanations of what changed.' },
+            // -- Analysis --
+            { id: 'pros_cons', label: 'Pros & Cons', cat: 'analysis', prompt: 'Analyze the above by listing the pros and cons. Be balanced and objective. Consider short-term and long-term implications. End with a brief bottom-line assessment.' },
+            { id: 'compare', label: 'Compare', cat: 'analysis', prompt: 'Compare and contrast the options discussed above. Cover key differences, strengths and weaknesses of each, and which scenarios favor which option. End with a recommendation.' },
+            { id: 'fact_check', label: 'Fact Check', cat: 'analysis', prompt: 'Fact-check the claims made above. For each claim, state whether it is accurate, partially accurate, or inaccurate, and provide the correct information with reasoning.' },
+            { id: 'deep_dive', label: 'Deep Dive', cat: 'analysis', prompt: 'Take a deep dive into the topic above. Cover aspects that are commonly overlooked, provide nuanced analysis, cite relevant context, and explore implications. Go beyond surface-level understanding.' },
+            { id: 'eli5', label: 'ELI5', cat: 'analysis', prompt: 'Explain the above like I\'m 5 years old. Use simple analogies, everyday examples, and short sentences. Make it fun and easy to understand.' },
+            // -- Productivity --
+            { id: 'continue', label: 'Continue', cat: 'productivity', prompt: 'Continue from where you left off. Pick up EXACTLY where you stopped. Do not repeat anything already written.' },
+            { id: 'action_items', label: 'Action Items', cat: 'productivity', prompt: 'Extract all action items from the above conversation. For each item, identify: what needs to be done, who should do it (if mentioned), priority level, and any deadlines or dependencies.' },
+            { id: 'brainstorm', label: 'Brainstorm', cat: 'productivity', prompt: 'Brainstorm creative ideas and solutions related to the above. Think broadly, include unconventional approaches, and don\'t self-censor. Aim for quantity and variety. Group ideas by theme.' },
+            { id: 'outline', label: 'Outline', cat: 'productivity', prompt: 'Create a detailed outline for the above topic. Include main sections, subsections, key points to cover, and a logical flow. This should serve as a complete roadmap for writing the full piece.' },
+            { id: 'tldr', label: 'TL;DR', cat: 'productivity', prompt: 'Give me a TL;DR of everything above in 2-3 sentences maximum. Be direct, skip qualifiers, just the essential information.' },
+            { id: 'next_steps', label: 'Next Steps', cat: 'productivity', prompt: 'Based on our conversation above, what are the concrete next steps? List them in order of priority with brief explanations of why each matters.' },
         ],
 
-        CATEGORIES: [
-            { id: 'pipeline', label: 'Build Pipeline', color: '#58a6ff' },
-            { id: 'recovery', label: 'Recovery', color: '#d29922' },
-            { id: 'resume', label: 'Resume Project', color: '#bc8cff' },
-            { id: 'custom', label: 'Custom', color: '#3fb950' },
+        DEFAULT_CATEGORIES: [
+            { id: 'writing', label: 'Writing', color: '#58a6ff' },
+            { id: 'code', label: 'Code', color: '#d29922' },
+            { id: 'analysis', label: 'Analysis', color: '#bc8cff' },
+            { id: 'productivity', label: 'Productivity', color: '#3fb950' },
         ],
 
         init() { this._load(); },
 
         _load() {
+            // Load categories
+            try {
+                const savedCats = GM_getValue(this.CATEGORIES_KEY, null);
+                if (savedCats) this.categories = JSON.parse(savedCats);
+                else this.categories = this.DEFAULT_CATEGORIES.map(c => ({ ...c }));
+            } catch (e) {
+                this.categories = this.DEFAULT_CATEGORIES.map(c => ({ ...c }));
+            }
+            // Load prompts
             try {
                 const saved = GM_getValue(this.STORAGE_KEY, null);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    this.prompts = this.DEFAULT_PROMPTS.map(def => {
-                        const s = parsed.find(p => p.id === def.id);
-                        return s ? { ...def, label: s.label, prompt: s.prompt } : { ...def };
-                    });
-                    // Keep any extra custom prompts
-                    parsed.forEach(p => { if (!this.prompts.find(x => x.id === p.id)) this.prompts.push(p); });
-                    return;
-                }
+                if (saved) { this.prompts = JSON.parse(saved); return; }
             } catch (e) { /* ignore */ }
             this.prompts = this.DEFAULT_PROMPTS.map(d => ({ ...d }));
         },
@@ -1230,7 +1258,37 @@
             GM_setValue(this.STORAGE_KEY, JSON.stringify(this.prompts.map(p => ({ id: p.id, label: p.label, prompt: p.prompt, cat: p.cat }))));
         },
 
-        add(label, prompt, cat = 'custom') {
+        saveCategories() {
+            GM_setValue(this.CATEGORIES_KEY, JSON.stringify(this.categories));
+        },
+
+        addCategory(label, color = '#888') {
+            const id = 'cat_' + Date.now();
+            this.categories.push({ id, label, color });
+            this.saveCategories();
+            return id;
+        },
+
+        renameCategory(id, newLabel) {
+            const cat = this.categories.find(c => c.id === id);
+            if (cat) { cat.label = newLabel; this.saveCategories(); }
+        },
+
+        setCategoryColor(id, color) {
+            const cat = this.categories.find(c => c.id === id);
+            if (cat) { cat.color = color; this.saveCategories(); }
+        },
+
+        removeCategory(id) {
+            const fallback = this.categories.find(c => c.id !== id)?.id || 'custom';
+            this.prompts.forEach(p => { if (p.cat === id) p.cat = fallback; });
+            this.categories = this.categories.filter(c => c.id !== id);
+            this.save();
+            this.saveCategories();
+        },
+
+        add(label, prompt, cat) {
+            if (!cat) cat = this.categories[0]?.id || 'custom';
             const id = 'user_' + Date.now();
             this.prompts.push({ id, label, prompt, cat });
             this.save();
@@ -1260,174 +1318,503 @@
     };
 
     // =====================================================================
-    //  CODE BLOCK SCANNER (from Prompt Deck v1.4)
+    //  MODULE: AUTOBUILD WORKFLOW ENGINE
     // =====================================================================
-    function extractCleanCode(el) {
-        const clone = el.cloneNode(true);
-        // Remove line number elements
-        const lineNumSelectors = [
-            '[class*="line-number"]', '[class*="linenumber"]', '[class*="line-num"]',
-            '[class*="LineNumber"]', '[class*="ln-num"]', '[class*="hljs-ln-n"]',
-            '[class*="gutter"]', '[class*="Gutter"]',
-            '[class*="line-numbers-row"]', '[class*="line-count"]',
-            'td.hljs-ln-numbers', '.hljs-ln-numbers',
-            '[data-line-number]', '[aria-hidden="true"]',
-        ].join(',');
-        try { clone.querySelectorAll(lineNumSelectors).forEach(n => n.remove()); } catch (e) { /* selector issue */ }
-        // If table layout (hljs-ln pattern), keep only code cells
-        const codeCells = clone.querySelectorAll('td.hljs-ln-code, td[class*="code"], td:last-child');
-        if (codeCells.length > 0) {
-            const lines = []; codeCells.forEach(td => lines.push(td.textContent || ''));
-            const joined = lines.join('\n').trim();
-            if (joined.length >= 10) return joined;
-        }
-        let text = clone.innerText || clone.textContent || '';
-        // Regex fallback: strip leading line numbers if most lines match
-        const rawLines = text.split('\n');
-        const numPattern = /^\s*\d{1,5}[\s\t]/;
-        const matchCount = rawLines.filter(l => l.trim() && numPattern.test(l)).length;
-        const nonEmptyCount = rawLines.filter(l => l.trim()).length;
-        if (nonEmptyCount > 2 && matchCount / nonEmptyCount > 0.7) {
-            let sequential = 0, lastNum = 0;
-            for (const line of rawLines) {
-                const m = line.match(/^\s*(\d{1,5})[\s\t]/);
-                if (m) { const n = parseInt(m[1], 10); if (n === lastNum + 1) sequential++; lastNum = n; }
-            }
-            if (sequential >= Math.min(nonEmptyCount - 2, 3)) {
-                text = rawLines.map(l => l.replace(/^\s*\d{1,5}[\s\t]/, '')).join('\n');
-            }
-        }
-        return text.trim();
-    }
+    const AutoBuildModule = {
+        id: 'autoBuild',
+        _state: 'idle',       // idle | waiting | sending | done
+        _step: -1,
+        _retries: 0,
+        _errorHits: 0,        // times the "could not be fully generated" banner appeared for current step
+        _errorPollTimer: null,
+        _errorCooldown: false, // prevents re-detecting the same banner
+        _projectDesc: '',
+        _projectContext: '',
+        _listener: null,
+        _overlay: null,
+        _statusEl: null,
+        _aborted: false,
+        _paused: false,
+        _pauseResolve: null,
 
-    function scanCodeBlocks() {
-        const blocks = [];
-        const seen = new Set();
-        function addBlock(el, text, source) {
-            const t = (text || extractCleanCode(el)).trim();
-            if (t.length < 10 || seen.has(t)) return;
-            seen.add(t);
-            let lang = 'code';
-            const codeEl = el.tagName === 'CODE' ? el : el.querySelector('code');
-            if (codeEl) { for (const cls of codeEl.classList) { const m = cls.match(/^(?:language-|lang-|hljs-)(.+)$/); if (m) { lang = m[1]; break; } } }
-            const wrapper = el.closest('[class*="code"]') || el.closest('[data-language]');
-            if (wrapper) {
-                const dl = wrapper.getAttribute('data-language'); if (dl) lang = dl;
-                const labelEl = wrapper.querySelector('[class*="text-text-"]') || wrapper.querySelector('span');
-                if (labelEl && labelEl.textContent.trim().length < 20 && !labelEl.textContent.includes(' ')) {
-                    const candidate = labelEl.textContent.trim().toLowerCase();
-                    if (candidate && /^[a-z0-9#+._-]+$/i.test(candidate)) lang = candidate;
-                }
+        // Workflow steps - each has a message builder and config
+        STEPS: [
+            {
+                id: 'research',
+                label: 'Research',
+                desc: 'Researching similar projects',
+                msg: (ctx) => `I want to build the following:\n\n**Project:** ${ctx.desc}\n\n**Context/Purpose:** ${ctx.context}\n\nBefore we start building, please research similar open-source projects, existing implementations, and established best practices for this type of tool. Summarize your findings including architecture patterns, common features, and any pitfalls to avoid.`,
+                retryable: true
+            },
+            {
+                id: 'build',
+                label: 'Build',
+                desc: 'Building the project',
+                msg: (ctx) => `Now begin building the project using the research data you gathered. Create a complete, fully working implementation. Do not stop until the entire project is complete.`,
+                retryable: true,
+                escalateMsg: `Please make a phase plan for this. Post the script results for each phase but keep working through all phases until everything is complete. Do not stop between phases.`
+            },
+            {
+                id: 'audit1',
+                label: 'Audit #1',
+                desc: 'Running first code audit',
+                msg: () => `Please do a thorough audit of this code. Check for bugs, logic errors, edge cases, missing error handling, security issues, performance problems, and anything else that could be improved. List everything you find.`,
+                retryable: true
+            },
+            {
+                id: 'patch',
+                label: 'Patch',
+                desc: 'Patching all bugs',
+                msg: () => `Please patch all bugs and issues found in the audit. If the task is too big to do in one response, make a phased plan approach and patch in phases. Complete all phases, posting the updated results after the completion of each phase. Do not stop until every issue is resolved.`,
+                retryable: true,
+                escalateMsg: `You stopped before completing all patches. Please make a phased plan for the remaining fixes. Post the results of each phase but continue working through all phases until everything is patched. Do not stop between phases.`
+            },
+            {
+                id: 'improve_ask',
+                label: 'Improve?',
+                desc: 'Asking for improvement suggestions',
+                msg: () => `What can be done to improve this? Consider performance, features, UX, code quality, error handling, accessibility, and anything else. List all possible improvements.`,
+                retryable: false
+            },
+            {
+                id: 'improve_exec',
+                label: 'Improve',
+                desc: 'Implementing improvements',
+                msg: () => `Please implement everything you suggested. Make a phased plan to roll out changes in phases. Post the results of every phase but continue until complete. Do not stop between phases.`,
+                retryable: true,
+                escalateMsg: `You stopped before completing all improvements. Continue implementing the remaining improvements. Post the results of each phase and keep working through all phases until everything is done.`
+            },
+            {
+                id: 'audit_final',
+                label: 'Final Audit',
+                desc: 'Running final code audit',
+                msg: () => `Please do a thorough final audit of the code. Verify all bugs are fixed, all improvements are properly integrated, and the code is production-ready. List any remaining issues.`,
+                retryable: true
             }
-            const prev = el.previousElementSibling || (el.parentElement && el.parentElement.previousElementSibling);
-            if (prev && prev.textContent && prev.textContent.trim().length < 25) {
-                const ht = prev.textContent.trim().toLowerCase();
-                if (ht && /^[a-z0-9#+._-]+$/i.test(ht) && !ht.includes(' ')) lang = ht;
-            }
-            const lines = t.split('\n').length;
-            const preview = t.split('\n').slice(0, 2).join(' ').substring(0, 55);
-            blocks.push({ idx: blocks.length, lang, lines, preview, text: t, el, source });
-        }
-        // Strategy 1: All <pre> elements
-        document.querySelectorAll('pre').forEach(pre => {
-            if (pre.closest('#' + PREFIX + '-panel')) return;
-            const code = pre.querySelector('code') || pre;
-            addBlock(code, null, 'pre');
-        });
-        // Strategy 2: Multi-line <code> not inside <pre>
-        document.querySelectorAll('code').forEach(code => {
-            if (code.closest('#' + PREFIX + '-panel') || code.closest('pre')) return;
-            const raw = code.innerText || code.textContent || '';
-            if (raw.includes('\n') && raw.trim().length >= 10) addBlock(code, null, 'code');
-        });
-        // Strategy 3: Code-related classes/attributes
-        const codeSelectors = [
-            '[class*="code-block"]', '[class*="code_block"]', '[class*="codeblock"]',
-            '[class*="CodeBlock"]', '[class*="code-content"]', '[class*="hljs"]',
-            '[class*="shiki"]', '[class*="prism"]', '[class*="highlight"]',
-            '[data-code]', '[data-language]',
-        ].join(',');
-        try {
-            document.querySelectorAll(codeSelectors).forEach(el => {
-                if (el.closest('#' + PREFIX + '-panel')) return;
-                if (el.querySelector('pre') || el.closest('pre')) return;
-                const text = el.innerText || el.textContent || '';
-                if (text.includes('\n') && text.trim().length >= 10) addBlock(el, null, 'class');
-            });
-        } catch (e) { /* invalid selector */ }
-        // Strategy 4: Find copy buttons and trace back to code containers
-        document.querySelectorAll('button').forEach(btn => {
-            if (btn.closest('#' + PREFIX + '-panel')) return;
-            const txt = (btn.textContent || '').toLowerCase().trim();
-            const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
-            if (txt === 'copy' || txt === 'copy code' || ariaLabel.includes('copy')) {
-                let container = btn.closest('[class*="code"]') || btn.closest('[class*="Code"]') || btn.parentElement?.parentElement;
-                if (!container) return;
-                const pre = container.querySelector('pre');
-                const code = container.querySelector('code');
-                const target = pre || code || container;
-                const text = target.innerText || target.textContent || '';
-                if (text.trim().length >= 10) addBlock(target, null, 'copy-btn');
-            }
-        });
-        return blocks;
-    }
-
-    // =====================================================================
-    //  MODULE: KEYBOARD SHORTCUTS
-    // =====================================================================
-    const ShortcutsModule = {
-        id: 'shortcuts',
-        _handler: null,
+        ],
 
         init() {
-            this._handler = (e) => {
-                if (!Settings.get('shortcuts')) return;
-                // Allow Ctrl+Shift combos even in editors (they're unusual enough)
-                const tag = (e.target.tagName || '').toLowerCase();
-                const editable = e.target.isContentEditable || tag === 'input' || tag === 'textarea';
-                if (!e.ctrlKey || !e.shiftKey) { if (editable) return; }
-                if (!e.ctrlKey || !e.shiftKey) return;
+            // Listen for response completion events
+            this._listener = EventBus.on('response:status', (status) => this._onResponseStatus(status));
+        },
 
-                switch (e.key.toUpperCase()) {
-                    case 'D': e.preventDefault(); ControlPanel.toggle(); break;
-                    case 'K': e.preventDefault(); this._copyLastCode(); break;
-                    case 'C':
-                        // Only if no text selected (don't override normal Ctrl+Shift+C)
-                        if (window.getSelection().toString().length === 0) { e.preventDefault(); this._copyLastResponse(); }
-                        break;
-                    case 'E': e.preventDefault(); ExportModule.exportCurrentJSON(); break;
+        _onResponseStatus(status) {
+            if (this._state !== 'waiting' || this._aborted) return;
+            if (status === 'complete' || status === 'truncated') {
+                this._handleCompletion(status);
+            } else if (status === 'stuck') {
+                this._handleStuck();
+            }
+        },
+
+        async _handleCompletion(status) {
+            const step = this.STEPS[this._step];
+            if (!step) return;
+
+            // If the error banner is visible, let the error watcher handle it instead
+            if (this._findErrorBanner()) {
+                this._updateHUD(`${step.label}: generation error detected, error handler will recover...`);
+                return;
+            }
+
+            const isTruncated = status === 'truncated';
+            const maxRetries = Settings.get('autoBuildMaxRetries');
+
+            // If truncated or retryable and under retry limit, send continue
+            if (isTruncated && step.retryable && this._retries < maxRetries) {
+                this._retries++;
+                this._updateHUD(`${step.label}: response cut off, sending continue (${this._retries}/${maxRetries})...`);
+                await sleep(3000);
+                if (this._aborted) return;
+                this._state = 'sending';
+                await this._send('continue');
+                return;
+            }
+
+            // If we exhausted retries and there's an escalation message, send it
+            if (isTruncated && step.escalateMsg && this._retries >= maxRetries) {
+                this._retries = 0;
+                this._updateHUD(`${step.label}: escalating to phased approach...`);
+                await sleep(3000);
+                if (this._aborted) return;
+                this._state = 'sending';
+                await this._send(step.escalateMsg);
+                return;
+            }
+
+            // Step complete - advance
+            this._retries = 0;
+            const delay = Settings.get('autoBuildContinueDelay') * 1000;
+            this._updateHUD(`${step.label} complete! Next step in ${delay / 1000}s...`);
+
+            // Check if paused
+            if (this._paused) {
+                this._updateHUD(`${step.label} complete! Paused - click resume to continue.`);
+                await new Promise(r => { this._pauseResolve = r; });
+                if (this._aborted) return;
+            }
+
+            await sleep(delay);
+            if (this._aborted) return;
+            this._nextStep();
+        },
+
+        _handleStuck() {
+            // If error banner is visible, let the error watcher handle it
+            if (this._findErrorBanner()) return;
+            this._updateHUD(`Response appears stuck, sending continue...`);
+            this._retries++;
+            setTimeout(async () => {
+                if (this._aborted) return;
+                this._state = 'sending';
+                await this._send('continue');
+            }, 3000);
+        },
+
+        // ---- Error Banner Detection ----
+        // Watches for "Claude's response could not be fully generated" + Retry button
+        _startErrorWatch() {
+            this._stopErrorWatch();
+            this._errorPollTimer = setInterval(() => this._checkForErrorBanner(), 2500);
+        },
+
+        _stopErrorWatch() {
+            if (this._errorPollTimer) { clearInterval(this._errorPollTimer); this._errorPollTimer = null; }
+        },
+
+        _findErrorBanner() {
+            // Look for the error text anywhere in main content
+            const main = document.querySelector('main') || document.body;
+            const candidates = main.querySelectorAll('div');
+            for (const el of candidates) {
+                // Check direct text content (not children) to avoid false positives
+                if (el.childNodes.length <= 3 && el.textContent.includes('could not be fully generated')) {
+                    // Walk up to find the container with the Retry button
+                    let container = el.closest('[data-color-context]') || el.parentElement?.parentElement;
+                    if (!container) container = el.parentElement;
+                    const retryBtn = container?.querySelector('button');
+                    if (retryBtn && retryBtn.textContent.trim().toLowerCase() === 'retry') {
+                        return { container, retryBtn };
+                    }
+                    // Broader search: sibling/parent buttons
+                    let walker = el.parentElement;
+                    for (let i = 0; i < 5 && walker; i++) {
+                        const btn = walker.querySelector('button');
+                        if (btn && btn.textContent.trim().toLowerCase() === 'retry') {
+                            return { container: walker, retryBtn: btn };
+                        }
+                        walker = walker.parentElement;
+                    }
                 }
-            };
-            document.addEventListener('keydown', this._handler, true);
+            }
+            return null;
         },
 
-        _copyLastCode() {
-            const blocks = scanCodeBlocks();
-            if (blocks.length > 0) {
-                const last = blocks[blocks.length - 1];
-                navigator.clipboard.writeText(last.text).then(() => {
-                    showToast('Copied ' + last.lang + ' (' + last.lines + 'L)', 2000, 'success');
-                }).catch(() => {});
-            } else { showToast('No code blocks found', 2000, 'warn'); }
+        async _checkForErrorBanner() {
+            if (this._aborted || this._errorCooldown) return;
+            if (this._state !== 'waiting' && this._state !== 'sending') return;
+
+            const found = this._findErrorBanner();
+            if (!found) return;
+
+            // Prevent re-detecting same banner
+            this._errorCooldown = true;
+            this._errorHits++;
+
+            const step = this.STEPS[this._step];
+            const stepLabel = step ? step.label : 'Step';
+
+            if (this._errorHits <= 1) {
+                // First hit: click Retry
+                this._updateHUD(`${stepLabel}: generation failed, clicking Retry...`);
+                showToast('Response failed - retrying automatically', 3000, 'warn');
+                found.retryBtn.click();
+                this._state = 'waiting';
+                // Give the retry time to kick off before watching again
+                await sleep(5000);
+                this._errorCooldown = false;
+            } else {
+                // Subsequent hits: wait for the UI to settle, then send phased continue
+                this._updateHUD(`${stepLabel}: generation failed again (${this._errorHits}x), sending phased continue...`);
+                showToast('Response failed again - sending phased approach', 3000, 'warn');
+                // Wait for things to settle
+                await sleep(4000);
+                if (this._aborted) return;
+                this._state = 'sending';
+                await this._send(`Your previous response could not be fully generated. Please continue from where you left off. If the task is too large for a single response, develop a phased approach - post the results of each phase but continue working through all phases until everything is complete. Do not stop between phases.`);
+                this._errorCooldown = false;
+            }
         },
 
-        _copyLastResponse() {
-            const text = DOM.getLastResponse();
-            if (!text) { showToast('No response to copy', 2000, 'warn'); return; }
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('Copied response (' + text.split(/\s+/).length + ' words)', 2000, 'success');
-            }).catch(() => {
-                // Fallback
-                const ta = document.createElement('textarea'); ta.value = text;
-                ta.style.cssText = 'position:fixed;left:-9999px'; document.body.appendChild(ta);
-                ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-                showToast('Copied response (fallback)', 2000, 'success');
+        async _send(text) {
+            try {
+                await DOM.sendMessage(text);
+                this._state = 'waiting';
+                if (Settings.get('autoScroll')) setTimeout(() => AutoScrollModule.scrollToBottom(), 500);
+            } catch (e) {
+                this._updateHUD(`Send failed: ${e.message}. Retrying in 5s...`);
+                await sleep(5000);
+                if (!this._aborted) await this._send(text);
+            }
+        },
+
+        async _nextStep() {
+            this._step++;
+            if (this._step >= this.STEPS.length) {
+                this._state = 'done';
+                this._updateHUD('AutoBuild complete!');
+                showToast('AutoBuild workflow finished!', 5000, 'success');
+                this._showDoneState();
+                return;
+            }
+            const step = this.STEPS[this._step];
+            this._retries = 0;
+            this._errorHits = 0;
+            this._errorCooldown = false;
+            this._updateHUD(`Step ${this._step + 1}/${this.STEPS.length}: ${step.desc}...`);
+            this._updateProgress();
+            this._state = 'sending';
+            const ctx = { desc: this._projectDesc, context: this._projectContext };
+            await this._send(step.msg(ctx));
+        },
+
+        start() {
+            this._showInputDialog();
+        },
+
+        _showInputDialog() {
+            if (this._overlay) this._overlay.remove();
+            const ov = document.createElement('div');
+            ov.id = PREFIX + '-ab-overlay';
+            Object.assign(ov.style, {
+                position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.7)',
+                zIndex: '200000', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backdropFilter: 'blur(4px)'
             });
+
+            const dialog = document.createElement('div');
+            Object.assign(dialog.style, {
+                background: '#0d0d14', border: '1px solid #2a2a3a', borderRadius: '16px',
+                width: '520px', maxWidth: '90vw', maxHeight: '85vh', overflow: 'hidden',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(88,166,255,0.1)',
+                display: 'flex', flexDirection: 'column'
+            });
+
+            setSafeHTML(dialog, `
+                <div style="padding:20px 24px 0;flex-shrink:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                        <div>
+                            <h2 style="margin:0;font-size:18px;font-weight:700;color:#e8e8f0;letter-spacing:-0.3px">AutoBuild</h2>
+                            <div style="font-size:11px;color:#555;margin-top:2px">Automated build workflow engine</div>
+                        </div>
+                        <button id="${PREFIX}-ab-close" style="background:none;border:none;color:#555;font-size:22px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all 0.15s">&times;</button>
+                    </div>
+                </div>
+                <div style="padding:0 24px 20px;overflow-y:auto;flex:1">
+                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#a8a8b8">What are you looking to create?</label>
+                    <textarea id="${PREFIX}-ab-desc" placeholder="e.g. A PowerShell GUI tool that scans the network for open ports and displays results in a sortable table..." style="width:100%;height:80px;background:#1a1a2e;color:#e0e0f0;border:1px solid #2a2a3a;border-radius:10px;padding:12px;font-size:13px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.2s;box-sizing:border-box"></textarea>
+
+                    <label style="display:block;margin:14px 0 6px;font-size:12px;font-weight:600;color:#a8a8b8">Context &amp; purpose <span style="color:#555;font-weight:400">(optional)</span></label>
+                    <textarea id="${PREFIX}-ab-context" placeholder="e.g. This is for our IT team to quickly audit devices on the LAN. Needs to be turnkey with no dependencies..." style="width:100%;height:60px;background:#1a1a2e;color:#e0e0f0;border:1px solid #2a2a3a;border-radius:10px;padding:12px;font-size:13px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.2s;box-sizing:border-box"></textarea>
+
+                    <div style="margin-top:16px;padding:12px;background:rgba(88,166,255,0.05);border:1px solid rgba(88,166,255,0.1);border-radius:10px">
+                        <div style="font-size:11px;font-weight:600;color:#58a6ff;margin-bottom:8px">Workflow Steps</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px" id="${PREFIX}-ab-steps-preview"></div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;margin-top:18px">
+                        <button id="${PREFIX}-ab-launch" style="flex:1;padding:12px;background:linear-gradient(135deg,#58a6ff,#3d8bfd);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:-0.2px">Launch AutoBuild</button>
+                        <button id="${PREFIX}-ab-cancel" style="padding:12px 20px;background:#1a1a2e;color:#888;border:1px solid #2a2a3a;border-radius:10px;font-size:13px;cursor:pointer;transition:all 0.15s">Cancel</button>
+                    </div>
+                </div>
+            `);
+
+            ov.appendChild(dialog);
+            document.body.appendChild(ov);
+            this._overlay = ov;
+
+            // Render step pills
+            const stepsContainer = $(`#${PREFIX}-ab-steps-preview`, dialog);
+            this.STEPS.forEach((s, i) => {
+                const pill = document.createElement('span');
+                Object.assign(pill.style, {
+                    padding: '3px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '600',
+                    background: 'rgba(88,166,255,0.1)', color: '#58a6ff', border: '1px solid rgba(88,166,255,0.15)'
+                });
+                pill.textContent = `${i + 1}. ${s.label}`;
+                stepsContainer.appendChild(pill);
+            });
+
+            // Focus textarea styles
+            const desc = $(`#${PREFIX}-ab-desc`, dialog);
+            const ctx = $(`#${PREFIX}-ab-context`, dialog);
+            [desc, ctx].forEach(ta => {
+                ta.addEventListener('focus', () => ta.style.borderColor = '#58a6ff');
+                ta.addEventListener('blur', () => ta.style.borderColor = '#2a2a3a');
+            });
+
+            // Events
+            $(`#${PREFIX}-ab-close`, dialog).addEventListener('click', () => ov.remove());
+            $(`#${PREFIX}-ab-cancel`, dialog).addEventListener('click', () => ov.remove());
+            ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
+
+            $(`#${PREFIX}-ab-launch`, dialog).addEventListener('click', () => {
+                const d = desc.value.trim();
+                if (!d) { desc.style.borderColor = '#f85149'; showToast('Describe what you want to build', 2000, 'warn'); return; }
+                this._projectDesc = d;
+                this._projectContext = ctx.value.trim();
+                ov.remove();
+                this._overlay = null;
+                this._launch();
+            });
+
+            desc.focus();
+        },
+
+        _launch() {
+            this._aborted = false;
+            this._paused = false;
+            this._step = -1;
+            this._retries = 0;
+            this._errorHits = 0;
+            this._errorCooldown = false;
+            this._state = 'idle';
+            this._buildHUD();
+            this._startErrorWatch();
+            this._nextStep();
+        },
+
+        _buildHUD() {
+            // Remove existing
+            const existing = $(`#${PREFIX}-ab-hud`);
+            if (existing) existing.remove();
+
+            const hud = document.createElement('div');
+            hud.id = PREFIX + '-ab-hud';
+            Object.assign(hud.style, {
+                position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+                background: '#0d0d14', border: '1px solid #2a2a3a', borderRadius: '14px',
+                padding: '10px 16px', zIndex: '200001', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                display: 'flex', alignItems: 'center', gap: '12px', minWidth: '380px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(88,166,255,0.08)'
+            });
+
+            setSafeHTML(hud, `
+                <div style="display:flex;flex-direction:column;flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                        <span style="font-size:11px;font-weight:700;color:#58a6ff;letter-spacing:0.5px">AUTOBUILD</span>
+                        <div id="${PREFIX}-ab-progress" style="flex:1;height:3px;background:#1a1a2e;border-radius:2px;overflow:hidden">
+                            <div id="${PREFIX}-ab-progress-bar" style="height:100%;background:linear-gradient(90deg,#58a6ff,#3fb950);width:0%;transition:width 0.5s ease;border-radius:2px"></div>
+                        </div>
+                        <span id="${PREFIX}-ab-step-count" style="font-size:10px;color:#555;flex-shrink:0">0/${this.STEPS.length}</span>
+                    </div>
+                    <div id="${PREFIX}-ab-status" style="font-size:11px;color:#a8a8b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Initializing...</div>
+                </div>
+                <div style="display:flex;gap:4px;flex-shrink:0">
+                    <button id="${PREFIX}-ab-pause" title="Pause after current step" style="background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.2);color:#d29922;width:28px;height:28px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.15s">||</button>
+                    <button id="${PREFIX}-ab-skip" title="Skip to next step" style="background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.2);color:#58a6ff;width:28px;height:28px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;font-weight:700">>></button>
+                    <button id="${PREFIX}-ab-abort" title="Abort AutoBuild" style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.2);color:#f85149;width:28px;height:28px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s">&times;</button>
+                </div>
+            `);
+
+            document.body.appendChild(hud);
+            this._statusEl = $(`#${PREFIX}-ab-status`, hud);
+
+            // Bind HUD buttons
+            $(`#${PREFIX}-ab-pause`, hud).addEventListener('click', () => this._togglePause());
+            $(`#${PREFIX}-ab-skip`, hud).addEventListener('click', () => this._skipStep());
+            $(`#${PREFIX}-ab-abort`, hud).addEventListener('click', () => this._abort());
+        },
+
+        _updateHUD(msg) {
+            if (this._statusEl) this._statusEl.textContent = msg;
+            console.log(`${LOG_TAG} [AutoBuild] ${msg}`);
+        },
+
+        _updateProgress() {
+            const bar = $(`#${PREFIX}-ab-progress-bar`);
+            const count = $(`#${PREFIX}-ab-step-count`);
+            if (bar) bar.style.width = `${((this._step + 1) / this.STEPS.length) * 100}%`;
+            if (count) count.textContent = `${this._step + 1}/${this.STEPS.length}`;
+        },
+
+        _showDoneState() {
+            this._stopErrorWatch();
+            const bar = $(`#${PREFIX}-ab-progress-bar`);
+            if (bar) {
+                bar.style.width = '100%';
+                bar.style.background = 'linear-gradient(90deg,#3fb950,#58a6ff)';
+            }
+            const pause = $(`#${PREFIX}-ab-pause`);
+            const skip = $(`#${PREFIX}-ab-skip`);
+            if (pause) pause.style.display = 'none';
+            if (skip) skip.style.display = 'none';
+            // Auto-remove HUD after 15s
+            setTimeout(() => {
+                const hud = $(`#${PREFIX}-ab-hud`);
+                if (hud && this._state === 'done') {
+                    hud.style.transition = 'opacity 0.5s, transform 0.5s';
+                    hud.style.opacity = '0';
+                    hud.style.transform = 'translateX(-50%) translateY(10px)';
+                    setTimeout(() => hud.remove(), 500);
+                }
+            }, 15000);
+        },
+
+        _togglePause() {
+            if (this._paused) {
+                this._paused = false;
+                this._updateHUD(`Resumed - continuing workflow...`);
+                const btn = $(`#${PREFIX}-ab-pause`);
+                if (btn) { btn.textContent = '||'; btn.title = 'Pause after current step'; btn.style.color = '#d29922'; btn.style.borderColor = 'rgba(210,153,34,0.2)'; btn.style.background = 'rgba(210,153,34,0.1)'; }
+                if (this._pauseResolve) { this._pauseResolve(); this._pauseResolve = null; }
+            } else {
+                this._paused = true;
+                this._updateHUD(`Paused - will hold after current response completes`);
+                const btn = $(`#${PREFIX}-ab-pause`);
+                if (btn) { btn.textContent = '>'; btn.title = 'Resume workflow'; btn.style.color = '#3fb950'; btn.style.borderColor = 'rgba(63,185,80,0.2)'; btn.style.background = 'rgba(63,185,80,0.1)'; }
+            }
+        },
+
+        _skipStep() {
+            if (this._state === 'done' || this._aborted) return;
+            this._updateHUD(`Skipping to next step...`);
+            this._state = 'idle'; // temporarily break out of waiting
+            this._retries = 0;
+            // Wait for any current generation to finish then advance
+            const trySkip = () => {
+                if (DOM.isGenerating()) {
+                    setTimeout(trySkip, 1000);
+                    return;
+                }
+                this._nextStep();
+            };
+            trySkip();
+        },
+
+        _abort() {
+            this._aborted = true;
+            this._paused = false;
+            this._state = 'idle';
+            this._stopErrorWatch();
+            this._updateHUD('AutoBuild aborted');
+            showToast('AutoBuild aborted', 3000, 'warn');
+            if (this._pauseResolve) { this._pauseResolve(); this._pauseResolve = null; }
+            const hud = $(`#${PREFIX}-ab-hud`);
+            if (hud) {
+                setTimeout(() => {
+                    hud.style.transition = 'opacity 0.5s, transform 0.5s';
+                    hud.style.opacity = '0';
+                    hud.style.transform = 'translateX(-50%) translateY(10px)';
+                    setTimeout(() => hud.remove(), 500);
+                }, 2000);
+            }
         },
 
         destroy() {
-            if (this._handler) document.removeEventListener('keydown', this._handler, true);
+            this._stopErrorWatch();
+            this._abort();
+            if (this._listener) this._listener();
         }
     };
 
@@ -1437,34 +1824,107 @@
     const ControlPanel = {
         _panel: null,
         _visible: false,
+        _locked: false,
         _usageData: null,
         _claudeSettings: null,
         _refreshTimer: null,
+        _resizing: false,
 
         FEATURES: [
-            { key: 'enabled_monkeys_in_a_barrel', name: 'Code Execution', desc: 'Virtual code environment', exclusive: 'enabled_artifacts_attachments' },
-            { key: 'enabled_artifacts_attachments', name: 'Repl Tool', desc: 'Additional Artifacts features', exclusive: 'enabled_monkeys_in_a_barrel' },
-            { key: 'enabled_saffron', name: 'Memory', desc: 'Cross-conversation memory' },
-            { key: 'enabled_saffron_search', name: 'Search Chats', desc: 'Chat history search' },
-            { key: 'enabled_sourdough', name: 'Projects', desc: 'Project memory' },
+            { key: 'enabled_monkeys_in_a_barrel', name: 'Code Execution', desc: 'Virtual code environment', exclusive: 'enabled_artifacts_attachments', tip: 'Let Claude run code in a sandbox — use this for data analysis, file processing, or testing snippets' },
+            { key: 'enabled_artifacts_attachments', name: 'Repl Tool', desc: 'Additional Artifacts features', exclusive: 'enabled_monkeys_in_a_barrel', tip: 'An alternative code tool that produces interactive artifacts and file attachments — cannot be active at the same time as Code Execution' },
+            { key: 'enabled_saffron', name: 'Memory', desc: 'Cross-conversation memory', tip: 'Claude remembers details about you across chats — like your name, preferences, and past projects' },
+            { key: 'enabled_saffron_search', name: 'Search Chats', desc: 'Chat history search', tip: 'Claude can search through your past conversations to recall things you discussed before' },
+            { key: 'enabled_sourdough', name: 'Projects', desc: 'Project memory', tip: 'Group related chats into projects with shared context and instructions that persist across conversations' },
         ],
 
+        _applyWidth(w) {
+            document.documentElement.style.setProperty('--cue-panel-w', w + 'px');
+        },
+
         toggle() {
-            if (this._panel) { this._panel.classList.toggle(PREFIX + '-panel-hidden'); this._visible = !this._visible; }
+            if (!this._panel) return;
+            if (this._locked) return; // locked panel ignores toggle
+            this._panel.classList.toggle(PREFIX + '-panel-hidden');
+            this._visible = !this._panel.classList.contains(PREFIX + '-panel-hidden');
+        },
+
+        _setLocked(locked) {
+            this._locked = locked;
+            Settings.set('panelLocked', locked);
+            const lockBtn = $(`#${PREFIX}-panel-lock`);
+            if (lockBtn) {
+                lockBtn.classList.toggle('locked', locked);
+                const lockedPath = '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>';
+                const unlockedPath = '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>';
+                const svg = lockBtn.querySelector('svg');
+                if (svg) setSafeHTML(svg, locked ? lockedPath : unlockedPath);
+            }
+            if (locked) {
+                this._panel.classList.remove(PREFIX + '-panel-hidden');
+                this._panel.style.pointerEvents = 'auto';
+                this._visible = true;
+                document.body.classList.add(PREFIX + '-panel-locked');
+            } else {
+                document.body.classList.remove(PREFIX + '-panel-locked');
+            }
+        },
+
+        _initResize() {
+            const handle = $(`#${PREFIX}-resize-handle`);
+            if (!handle) return;
+            let startX, startW;
+            const onMove = (e) => {
+                if (!this._resizing) return;
+                const dx = startX - e.clientX;
+                const newW = Math.max(240, Math.min(800, startW + dx));
+                this._applyWidth(newW);
+            };
+            const onUp = () => {
+                if (!this._resizing) return;
+                this._resizing = false;
+                handle.classList.remove('active');
+                this._panel.classList.remove(PREFIX + '-resizing');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                const w = parseInt(getComputedStyle(this._panel).width);
+                if (w) Settings.set('panelWidth', w);
+            };
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this._resizing = true;
+                startX = e.clientX;
+                startW = this._panel.offsetWidth;
+                handle.classList.add('active');
+                this._panel.classList.add(PREFIX + '-resizing');
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
         },
 
         async build() {
             if (this._panel) return;
 
+            // Apply saved width before styles render
+            this._applyWidth(Settings.get('panelWidth'));
+
             this._createStyles();
             this._panel = document.createElement('div');
             this._panel.id = PREFIX + '-panel';
-            this._panel.className = PREFIX + '-panel-hidden';
+            if (!Settings.get('panelLocked')) {
+                this._panel.className = PREFIX + '-panel-hidden';
+            }
 
-            this._panel.innerHTML = this._getHTML();
+            setSafeHTML(this._panel, this._getHTML());
             document.body.appendChild(this._panel);
             this._bindEvents();
+            this._initResize();
             this._loadData();
+
+            // Restore lock state
+            if (Settings.get('panelLocked')) {
+                this._setLocked(true);
+            }
 
             // Auto-refresh usage every 60s
             this._refreshTimer = setInterval(() => this._loadData(), 60000);
@@ -1480,24 +1940,43 @@
                 #${PREFIX}-hover-strip::after {
                     content: ''; position: absolute; top: 50%; right: 0;
                     transform: translateY(-50%); width: 3px; height: 60px;
-                    background: rgba(88,166,255,0.2); border-radius: 2px;
+                    background: var(--strip-color, rgba(88,166,255,0.2)); border-radius: 2px;
                     transition: opacity 0.3s, background 0.3s;
                 }
-                #${PREFIX}-hover-strip:hover::after { background: rgba(88,166,255,0.5); width: 4px; }
+                #${PREFIX}-hover-strip:hover::after { background: var(--strip-hover, rgba(88,166,255,0.5)); width: 4px; }
 
                 /* Panel container */
                 #${PREFIX}-panel {
-                    position: fixed; top: 0; right: 0; width: 310px; height: 100vh;
+                    position: fixed; top: 0; right: 0; width: var(--cue-panel-w, 310px); height: 100vh;
                     background: #0d0d14; border-left: 1px solid #2a2a3a;
                     z-index: 99999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                     color: #c8c8d8; font-size: 11px; overflow-y: auto; overflow-x: hidden;
-                    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+                    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), width 0s;
                     box-shadow: -4px 0 30px rgba(0,0,0,0.5);
                     display: flex; flex-direction: column;
                 }
                 #${PREFIX}-panel.${PREFIX}-panel-hidden { transform: translateX(100%); pointer-events: none; }
+                #${PREFIX}-panel.${PREFIX}-resizing { transition: none !important; }
                 #${PREFIX}-panel::-webkit-scrollbar { width: 4px; }
                 #${PREFIX}-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+                /* Locked state - push page */
+                body.${PREFIX}-panel-locked { margin-right: var(--cue-panel-w, 310px) !important; transition: margin-right 0.3s cubic-bezier(0.4,0,0.2,1); }
+                body.${PREFIX}-panel-locked #${PREFIX}-hover-strip { display: none; }
+
+                /* Resize handle */
+                .${PREFIX}-resize-handle {
+                    position: absolute; top: 0; left: -3px; width: 6px; height: 100%;
+                    cursor: col-resize; z-index: 100000;
+                }
+                .${PREFIX}-resize-handle::after {
+                    content: ''; position: absolute; top: 50%; left: 2px;
+                    transform: translateY(-50%); width: 2px; height: 40px;
+                    background: rgba(88,166,255,0); border-radius: 2px;
+                    transition: background 0.2s;
+                }
+                .${PREFIX}-resize-handle:hover::after,
+                .${PREFIX}-resize-handle.active::after { background: rgba(88,166,255,0.5); }
 
                 /* Header - minimal */
                 .${PREFIX}-hdr {
@@ -1507,6 +1986,14 @@
                 }
                 .${PREFIX}-hdr h2 { margin: 0; font-size: 12px; font-weight: 600; color: #e8e8f0; }
                 .${PREFIX}-hdr-ver { font-size: 9px; color: #555; margin-left: 4px; }
+                .${PREFIX}-hdr-actions { display: flex; align-items: center; gap: 2px; }
+                .${PREFIX}-lock-btn {
+                    background: none; border: none; color: #555; width: 20px; height: 20px;
+                    cursor: pointer; font-size: 12px; display: flex; align-items: center;
+                    justify-content: center; border-radius: 4px; transition: all 0.2s;
+                }
+                .${PREFIX}-lock-btn:hover { color: #58a6ff; background: rgba(88,166,255,0.1); }
+                .${PREFIX}-lock-btn.locked { color: #58a6ff; }
                 .${PREFIX}-close {
                     background: none; border: none; color: #555; width: 20px; height: 20px;
                     cursor: pointer; font-size: 14px; display: flex; align-items: center;
@@ -1610,15 +2097,43 @@
                 .${PREFIX}-status-dot.truncated { background: #f85149; }
                 @keyframes ${PREFIX}-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-                /* Prompt buttons - compact */
-                .${PREFIX}-prompt-btn {
-                    display: inline-flex; align-items: center;
-                    padding: 2px 6px; border-radius: 4px; border: 1px solid #2a2a3a;
-                    background: rgba(255,255,255,0.03); color: #c8c8d8;
-                    cursor: pointer; font-size: 10px; transition: all 0.2s; margin: 1px;
+                /* Prompt section */
+                .${PREFIX}-prompts-section { padding-bottom: 0 !important; }
+                .${PREFIX}-prompt-tabs {
+                    display: flex; gap: 2px; margin-bottom: 4px; flex-wrap: wrap;
                 }
+                .${PREFIX}-ptab {
+                    padding: 2px 6px; border-radius: 4px; border: 1px solid #2a2a3a;
+                    background: rgba(255,255,255,0.02); color: #777; cursor: pointer;
+                    font-size: 9px; font-weight: 600; transition: all 0.2s;
+                }
+                .${PREFIX}-ptab:hover { color: #bbb; background: rgba(255,255,255,0.05); }
+                .${PREFIX}-ptab.active { color: var(--tab-color, #58a6ff); border-color: var(--tab-color, #58a6ff); background: rgba(88,166,255,0.08); }
+                .${PREFIX}-prompt-row {
+                    display: flex; align-items: center; gap: 2px; margin: 1px 0;
+                }
+                .${PREFIX}-prompt-btn {
+                    display: flex; align-items: center; flex: 1; min-width: 0;
+                    padding: 3px 6px; border-radius: 4px; border: 1px solid #2a2a3a;
+                    background: rgba(255,255,255,0.03); color: #c8c8d8;
+                    cursor: pointer; font-size: 10px; transition: all 0.2s;
+                    text-align: left; overflow: hidden; white-space: nowrap;
+                }
+                .${PREFIX}-prompt-btn span { overflow: hidden; text-overflow: ellipsis; }
                 .${PREFIX}-prompt-btn:hover { background: rgba(88,166,255,0.1); border-color: #58a6ff40; color: #fff; }
-                .${PREFIX}-prompt-cat { display: none; }
+                .${PREFIX}-prompt-edit-btn {
+                    background: none; border: 1px solid transparent; color: #555; cursor: pointer;
+                    font-size: 11px; width: 20px; height: 20px; border-radius: 4px;
+                    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+                    transition: all 0.2s;
+                }
+                .${PREFIX}-prompt-edit-btn:hover { color: #58a6ff; background: rgba(88,166,255,0.1); border-color: #58a6ff40; }
+                .${PREFIX}-prompt-mgr-btn {
+                    padding: 1px 6px; border-radius: 4px; border: 1px solid #2a2a3a;
+                    background: rgba(255,255,255,0.03); color: #888; cursor: pointer;
+                    font-size: 9px; font-weight: 600; transition: all 0.2s;
+                }
+                .${PREFIX}-prompt-mgr-btn:hover { color: #58a6ff; background: rgba(88,166,255,0.08); border-color: #58a6ff40; }
 
                 /* Prompt editor modal */
                 .${PREFIX}-modal-overlay {
@@ -1651,12 +2166,105 @@
                 .${PREFIX}-modal-btn.danger { background: transparent; color: #f85149; border-color: rgba(248,81,73,0.3); }
                 .${PREFIX}-modal-btn.danger:hover { background: rgba(248,81,73,0.1); }
 
-                /* Shortcut keys */
-                .${PREFIX}-shortcut-hint {
-                    display: inline-block; padding: 0px 4px; background: rgba(255,255,255,0.06);
-                    border: 1px solid rgba(255,255,255,0.1); border-radius: 3px;
-                    font-size: 9px; color: #666; font-family: monospace;
+                /* Prompt Manager overlay */
+                .${PREFIX}-prompt-mgr {
+                    width: 680px; max-width: 95vw; max-height: 85vh;
+                    display: flex; flex-direction: column; padding: 0; overflow: hidden;
                 }
+                .${PREFIX}-mgr-header {
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding: 12px 16px; border-bottom: 1px solid #2a2a3a;
+                }
+                .${PREFIX}-mgr-toolbar {
+                    padding: 8px 16px; border-bottom: 1px solid #2a2a3a;
+                    display: flex; flex-direction: column; gap: 6px;
+                }
+                .${PREFIX}-mgr-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
+                .${PREFIX}-mgr-search {
+                    width: 100%; background: #1a1a2a; color: #c8c8d8; border: 1px solid #2a2a3a;
+                    border-radius: 6px; padding: 6px 10px; font-size: 12px; outline: none;
+                    box-sizing: border-box;
+                }
+                .${PREFIX}-mgr-search:focus { border-color: #58a6ff; }
+                .${PREFIX}-mgr-list {
+                    flex: 1; overflow-y: auto; padding: 4px 16px;
+                }
+                .${PREFIX}-mgr-item {
+                    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+                    transition: background 0.15s;
+                }
+                .${PREFIX}-mgr-item:hover { background: rgba(255,255,255,0.02); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
+                .${PREFIX}-mgr-item-head {
+                    display: flex; align-items: center; gap: 6px;
+                }
+                .${PREFIX}-mgr-item-dot {
+                    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+                }
+                .${PREFIX}-mgr-item-label {
+                    font-size: 12px; font-weight: 600; color: #e0e0f0; flex: 1; min-width: 0;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                }
+                .${PREFIX}-mgr-item-cat {
+                    font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;
+                }
+                .${PREFIX}-mgr-item-actions {
+                    display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s;
+                }
+                .${PREFIX}-mgr-item:hover .${PREFIX}-mgr-item-actions { opacity: 1; }
+                .${PREFIX}-mgr-act {
+                    background: none; border: 1px solid transparent; cursor: pointer;
+                    width: 22px; height: 22px; border-radius: 4px; font-size: 12px;
+                    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+                }
+                .${PREFIX}-mgr-act.edit { color: #58a6ff; }
+                .${PREFIX}-mgr-act.edit:hover { background: rgba(88,166,255,0.1); border-color: #58a6ff40; }
+                .${PREFIX}-mgr-act.del { color: #f85149; }
+                .${PREFIX}-mgr-act.del:hover { background: rgba(248,81,73,0.1); border-color: rgba(248,81,73,0.3); }
+                .${PREFIX}-mgr-act.move { color: #8b949e; font-size: 8px; padding: 2px 4px; min-width: 16px; }
+                .${PREFIX}-mgr-act.move:hover { background: rgba(139,148,158,0.15); color: #c9d1d9; }
+                .${PREFIX}-mgr-item-preview {
+                    font-size: 10px; color: #666; margin-top: 2px; line-height: 1.3;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                }
+                .${PREFIX}-mgr-footer {
+                    display: flex; gap: 6px; padding: 12px 16px; flex-wrap: wrap;
+                    border-top: 1px solid #2a2a3a;
+                }
+                .${PREFIX}-cat-editor {
+                    width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 8px 16px;
+                    border-bottom: 1px solid #2a2a3a; background: rgba(0,0,0,0.15);
+                }
+                .${PREFIX}-cat-row {
+                    display: flex; align-items: center; gap: 6px; height: 28px;
+                }
+                .${PREFIX}-cat-row input[type="text"] {
+                    flex: 1; background: #1a1a2a; color: #c8c8d8; border: 1px solid #2a2a3a;
+                    border-radius: 4px; padding: 3px 8px; font-size: 11px; outline: none;
+                    min-width: 0;
+                }
+                .${PREFIX}-cat-row input[type="text"]:focus { border-color: #58a6ff; }
+                .${PREFIX}-cat-row input[type="color"] {
+                    width: 24px; height: 24px; border: none; background: none; cursor: pointer;
+                    padding: 0; border-radius: 4px;
+                }
+                .${PREFIX}-cat-row .${PREFIX}-cat-count {
+                    font-size: 9px; color: #555; min-width: 20px; text-align: center;
+                }
+                .${PREFIX}-cat-row .${PREFIX}-cat-del {
+                    background: none; border: none; color: #f85149; cursor: pointer;
+                    font-size: 14px; width: 22px; height: 22px; display: flex; align-items: center;
+                    justify-content: center; border-radius: 4px; opacity: 0.5; transition: all 0.15s;
+                }
+                .${PREFIX}-cat-row .${PREFIX}-cat-del:hover { opacity: 1; background: rgba(248,81,73,0.1); }
+                .${PREFIX}-cat-add-row {
+                    display: flex; gap: 6px; margin-top: 2px;
+                }
+                .${PREFIX}-cat-add-row button {
+                    background: none; border: 1px dashed #333; color: #666; cursor: pointer;
+                    border-radius: 4px; padding: 3px 10px; font-size: 10px; transition: all 0.15s;
+                    flex: 1;
+                }
+                .${PREFIX}-cat-add-row button:hover { border-color: #58a6ff; color: #58a6ff; }
 
                 /* Settings grid for two-column layout */
                 .${PREFIX}-settings-grid {
@@ -1667,57 +2275,71 @@
 
         _getHTML() {
             return `
+                <div class="${PREFIX}-resize-handle" id="${PREFIX}-resize-handle"></div>
                 <div class="${PREFIX}-hdr">
                     <h2>CUE <span class="${PREFIX}-hdr-ver">v${VERSION}</span></h2>
-                    <button class="${PREFIX}-close" id="${PREFIX}-panel-close">&times;</button>
+                    <div class="${PREFIX}-hdr-actions">
+                        <button class="${PREFIX}-lock-btn${Settings.get('panelLocked') ? ' locked' : ''}" id="${PREFIX}-panel-lock" title="Lock panel open">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                ${Settings.get('panelLocked')
+                                    ? '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>'
+                                    : '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>'
+                                }
+                            </svg>
+                        </button>
+                        <button class="${PREFIX}-close" id="${PREFIX}-panel-close" title="Close the panel (unlocks if locked)">&times;</button>
+                    </div>
                 </div>
 
                 <div class="${PREFIX}-section">
-                    <div class="${PREFIX}-row"><span class="${PREFIX}-row-label">Response</span><span id="${PREFIX}-status"><span class="${PREFIX}-status-dot idle"></span>Idle</span></div>
-                    <div class="${PREFIX}-row"><span class="${PREFIX}-row-label">Last</span><span id="${PREFIX}-last-resp" style="color:#666;font-size:10px">--</span></div>
+                    <div class="${PREFIX}-row" title="Shows whether Claude is currently generating, finished, stuck, or idle"><span class="${PREFIX}-row-label">Response</span><span id="${PREFIX}-status"><span class="${PREFIX}-status-dot idle"></span>Idle</span></div>
+                    <div class="${PREFIX}-row" title="Duration and word count of Claude's most recent response"><span class="${PREFIX}-row-label">Last</span><span id="${PREFIX}-last-resp" style="color:#666;font-size:10px">--</span></div>
                 </div>
 
-                <div class="${PREFIX}-section">
+                <div class="${PREFIX}-section" title="Your current message usage for this billing period — resets daily or per-period depending on your plan">
                     <div id="${PREFIX}-usage-content"><span style="color:#555;font-size:10px">Loading usage...</span></div>
                 </div>
 
                 <div class="${PREFIX}-section">
-                    <div class="${PREFIX}-section-title">Export</div>
+                    <div class="${PREFIX}-section-title" title="Automated build workflow - research, build, audit, patch, improve, and final audit in one click">AutoBuild</div>
+                    <button class="${PREFIX}-export-btn" id="${PREFIX}-autobuild-btn" title="Launch the AutoBuild workflow engine - automates the full build cycle from research to final audit" style="background:linear-gradient(135deg,rgba(88,166,255,0.12),rgba(63,185,80,0.08));border-color:rgba(88,166,255,0.25);color:#58a6ff;font-weight:600">AutoBuild</button>
+                </div>
+
+                <div class="${PREFIX}-section">
+                    <div class="${PREFIX}-section-title" title="Download your conversations in different formats for backup, sharing, or analysis">Export</div>
                     <div style="display:flex;flex-direction:column;gap:2px">
-                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-json" title="Export current chat via API as JSON">Export JSON</button>
-                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-md" title="Export current chat as Markdown">Export MD</button>
-                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-all" title="Export all conversations as ZIP">Export All (ZIP)</button>
-                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-lyra" title="Preview in Lyra Exporter">Lyra Preview</button>
+                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-json" title="Download the current chat as a structured JSON file using Claude's API — includes full message data, metadata, and optionally images">Export JSON</button>
+                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-md" title="Download a simple Markdown copy of the current chat scraped from the page — good for quick notes or pasting into docs">Export MD</button>
+                        <button class="${PREFIX}-export-btn" id="${PREFIX}-export-all" title="Batch-download all your Claude conversations as a ZIP of JSON files — useful for full account backups">Export All (ZIP)</button>
                     </div>
                     <div class="${PREFIX}-settings-grid" style="margin-top:3px">
-                        ${this._makeToggle('exportBranchMode', 'Branches')}
-                        ${this._makeToggle('exportIncludeImages', 'Images')}
+                        ${this._makeToggle('exportBranchMode', 'Branches', 'Include all message branches and edits in the export — useful if you want to preserve alternate responses or edited messages')}
+                        ${this._makeToggle('exportIncludeImages', 'Images', 'Embed images as base64 data inside the JSON export — makes the file self-contained but larger')}
                     </div>
                 </div>
 
-                <div class="${PREFIX}-section" id="${PREFIX}-features-section">
+                <div class="${PREFIX}-section" id="${PREFIX}-features-section" title="Toggle Claude.ai beta features on or off — these are server-side flags that affect what Claude can do in your conversations">
                     <div id="${PREFIX}-features-content"><span style="color:#555;font-size:10px">Loading features...</span></div>
                 </div>
 
                 <div class="${PREFIX}-section">
                     <div class="${PREFIX}-settings-grid">
-                        ${this._makeToggle('themeEnabled', 'Theme')}
-                        ${this._makeToggle('fontOverride', 'Sans Fonts')}
-                        ${this._makeToggle('wideMode', 'Wide')}
-                        ${this._makeToggle('coloredButtons', 'Btn Colors')}
-                        ${this._makeToggle('coloredBoldItalic', 'Bold/Ital')}
-                        ${this._makeToggle('smoothAnimations', 'Animate')}
-                        ${this._makeToggle('customScrollbar', 'Scrollbar')}
-                        ${this._makeToggle('pasteFix', 'Paste Fix')}
-                        ${this._makeToggle('autoScroll', 'Auto-Scroll')}
-                        ${this._makeToggle('autoApprove', 'Auto-Approve')}
-                        ${this._makeToggle('responseMonitor', 'Resp Mon')}
-                        ${this._makeToggle('notifySound', 'Sound')}
-                        ${this._makeToggle('notifyFlash', 'Tab Flash')}
-                        ${this._makeToggle('domTrimmer', 'DOM Trim')}
-                        ${this._makeToggle('shortcuts', 'Shortcuts')}
+                        ${this._makeToggle('themeEnabled', 'Theme', 'Apply a custom dark color theme to Claude.ai — choose between Oceanic and Midnight variants below')}
+                        ${this._makeToggle('fontOverride', 'Sans Fonts', 'Replace Claude\'s default serif font with a clean sans-serif font for easier reading')}
+                        ${this._makeToggle('wideMode', 'Wide', 'Expand the chat area to use more of your screen — adjust the exact width with the slider below')}
+                        ${this._makeToggle('coloredButtons', 'Btn Colors', 'Colorize action buttons (copy, edit, retry, thumbs up/down) so they\'re easier to identify at a glance')}
+                        ${this._makeToggle('coloredBoldItalic', 'Bold/Ital', 'Make bold text green and italic text blue in Claude\'s responses for better visual scanning')}
+                        ${this._makeToggle('smoothAnimations', 'Animate', 'Add subtle hover transitions and focus outlines to buttons throughout the interface')}
+                        ${this._makeToggle('customScrollbar', 'Scrollbar', 'Replace the browser\'s default scrollbar with a slim, dark-themed scrollbar that matches the UI')}
+                        ${this._makeToggle('pasteFix', 'Paste Fix', 'Strip rich formatting when pasting into the editor — pastes plain text instead of HTML, preventing broken formatting')}
+                        ${this._makeToggle('autoScroll', 'Auto-Scroll', 'Automatically scroll to the bottom as Claude generates a response — keeps the latest text in view')}
+                        ${this._makeToggle('autoApprove', 'Auto-Approve', 'Automatically click "Allow" on tool-use permission dialogs — saves clicks when using code execution or artifacts')}
+                        ${this._makeToggle('responseMonitor', 'Resp Mon', 'Track response status (generating, complete, stuck, truncated) and measure response time and word count')}
+                        ${this._makeToggle('notifySound', 'Sound', 'Play a short tone when Claude finishes generating — useful when you tab away while waiting')}
+                        ${this._makeToggle('notifyFlash', 'Tab Flash', 'Flash the browser tab title when a response completes — catches your eye if you\'re in another tab')}
+                        ${this._makeToggle('domTrimmer', 'DOM Trim', 'Hide older messages from the page to reduce browser memory usage in very long conversations — they reappear on scroll')}
                     </div>
-                    <div class="${PREFIX}-row" style="margin-top:2px">
+                    <div class="${PREFIX}-row" style="margin-top:2px" title="Pick a color palette — Oceanic is blue-toned, Midnight is deeper and warmer, None disables theming entirely">
                         <span class="${PREFIX}-row-label" style="font-size:10px">Theme</span>
                         <select class="${PREFIX}-select" id="${PREFIX}-set-themeVariant">
                             <option value="oceanic">Oceanic</option>
@@ -1725,36 +2347,35 @@
                             <option value="none">None</option>
                         </select>
                     </div>
-                    <div class="${PREFIX}-row">
+                    <div class="${PREFIX}-row" title="Set how much of the screen the chat uses — drag right for a wider conversation area">
                         <span class="${PREFIX}-row-label" style="font-size:10px">Width: <span id="${PREFIX}-width-val">${Settings.get('chatWidthPct')}</span>%</span>
                         <input type="range" class="${PREFIX}-slider" id="${PREFIX}-set-chatWidthPct" min="50" max="100" value="${Settings.get('chatWidthPct')}" style="width:100px">
                     </div>
-                    <div class="${PREFIX}-row">
+                    <div class="${PREFIX}-row" title="How many messages stay visible in the DOM — lower values save memory in very long chats (hidden messages reappear when you scroll up)">
                         <span class="${PREFIX}-row-label" style="font-size:10px">Keep: <span id="${PREFIX}-trim-val">${Settings.get('domKeepVisible')}</span> msgs</span>
                         <input type="range" class="${PREFIX}-slider" id="${PREFIX}-set-domKeepVisible" min="5" max="100" value="${Settings.get('domKeepVisible')}" style="width:100px">
                     </div>
                 </div>
 
-                <div class="${PREFIX}-section">
-                    <div id="${PREFIX}-prompt-list"></div>
-                    <button class="${PREFIX}-prompt-btn" id="${PREFIX}-prompt-add" style="width:100%;justify-content:center;color:#58a6ff;margin-top:1px">+ Add Prompt</button>
+                <div class="${PREFIX}-section ${PREFIX}-prompts-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;border-bottom:none">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                        <div class="${PREFIX}-section-title" style="margin:0" title="One-click prompt buttons — click any prompt to send it instantly, or use Manage to edit, add, and delete prompts">Prompts</div>
+                        <div style="display:flex;gap:3px">
+                            <button class="${PREFIX}-prompt-mgr-btn" id="${PREFIX}-prompt-add-quick" title="Create a new prompt and add it to the list">+</button>
+                            <button class="${PREFIX}-prompt-mgr-btn" id="${PREFIX}-prompt-manage" title="Open the full prompt manager — edit, delete, search, and organize all your prompts">Manage</button>
+                        </div>
+                    </div>
+                    <div class="${PREFIX}-prompt-tabs" id="${PREFIX}-prompt-tabs"></div>
+                    <div id="${PREFIX}-prompt-list" style="flex:1;overflow-y:auto;overflow-x:hidden"></div>
                 </div>
 
-                <div class="${PREFIX}-section" style="border-bottom:none">
-                    <div style="display:grid;grid-template-columns:auto 1fr;gap:1px 8px;font-size:9px;color:#555">
-                        <span class="${PREFIX}-shortcut-hint">Ctrl+Shift+D</span><span>Panel</span>
-                        <span class="${PREFIX}-shortcut-hint">Ctrl+Shift+K</span><span>Copy code</span>
-                        <span class="${PREFIX}-shortcut-hint">Ctrl+Shift+C</span><span>Copy resp</span>
-                        <span class="${PREFIX}-shortcut-hint">Ctrl+Shift+E</span><span>Export JSON</span>
-                    </div>
-                    <div style="text-align:center;margin-top:3px"><span style="cursor:pointer;color:#58a6ff;font-size:9px" id="${PREFIX}-reset-settings">Reset All</span></div>
-                </div>
+                <div style="text-align:center;padding:4px 8px;border-top:1px solid rgba(255,255,255,0.04)"><span style="cursor:pointer;color:#58a6ff;font-size:9px" id="${PREFIX}-reset-settings" title="Reset every CUE setting to factory defaults and reload the page">Reset All</span></div>
             `;
         },
 
-        _makeToggle(key, label) {
+        _makeToggle(key, label, tip = '') {
             const checked = Settings.get(key) ? 'checked' : '';
-            return `<div class="${PREFIX}-row" style="min-height:16px">
+            return `<div class="${PREFIX}-row" style="min-height:16px"${tip ? ` title="${esc(tip)}"` : ''}>
                     <span class="${PREFIX}-row-label" style="font-size:10px">${label}</span>
                     <label class="${PREFIX}-toggle">
                         <input type="checkbox" data-setting="${key}" ${checked}>
@@ -1766,7 +2387,15 @@
 
         _bindEvents() {
             // Close button
-            $(`#${PREFIX}-panel-close`).addEventListener('click', () => this.toggle());
+            $(`#${PREFIX}-panel-close`).addEventListener('click', () => {
+                if (this._locked) this._setLocked(false);
+                this.toggle();
+            });
+
+            // Lock button
+            $(`#${PREFIX}-panel-lock`).addEventListener('click', () => {
+                this._setLocked(!this._locked);
+            });
 
             // Toggle switches
             this._panel.querySelectorAll(`input[data-setting]`).forEach(cb => {
@@ -1794,11 +2423,14 @@
 
             // Reset settings
             $(`#${PREFIX}-reset-settings`).addEventListener('click', () => {
-                if (confirm('Reset all settings to defaults?')) { Settings.reset(); location.reload(); }
+                Settings.reset();
+                showToast('Settings reset to defaults, reloading...', 1500, 'info');
+                setTimeout(() => location.reload(), 1500);
             });
 
-            // Add prompt button
-            $(`#${PREFIX}-prompt-add`).addEventListener('click', () => this._showPromptEditor());
+            // Prompt management buttons
+            $(`#${PREFIX}-prompt-add-quick`).addEventListener('click', () => this._showPromptEditor());
+            $(`#${PREFIX}-prompt-manage`).addEventListener('click', () => this._showPromptManager());
 
             // Listen for updates
             EventBus.on('response:status', (s) => this._updateStatus(s));
@@ -1809,11 +2441,13 @@
             const expJson = $(`#${PREFIX}-export-json`);
             const expMd = $(`#${PREFIX}-export-md`);
             const expAll = $(`#${PREFIX}-export-all`);
-            const expLyra = $(`#${PREFIX}-export-lyra`);
             if (expJson) expJson.addEventListener('click', () => ExportModule.exportCurrentJSON());
             if (expMd) expMd.addEventListener('click', () => ExportModule.exportMarkdown());
             if (expAll) expAll.addEventListener('click', () => ExportModule.exportAllZIP());
-            if (expLyra) expLyra.addEventListener('click', () => ExportModule.previewInLyra());
+
+            // Bind AutoBuild button
+            const abBtn = $(`#${PREFIX}-autobuild-btn`);
+            if (abBtn) abBtn.addEventListener('click', () => AutoBuildModule.start());
 
             this._renderPrompts();
         },
@@ -1853,7 +2487,7 @@
             addBar('Session (5h)', data.five_hour);
             addBar('Weekly', data.seven_day);
             addBar('Opus', data.seven_day_opus);
-            container.innerHTML = html || '<span style="color:#555;font-size:10px">No usage data</span>';
+            setSafeHTML(container, html || '<span style="color:#555;font-size:10px">No usage data</span>');
         },
 
         _updateUsageFromStream(ml) {
@@ -1876,7 +2510,7 @@
             };
             addBar('Session (5h)', windows['5h']);
             addBar('Weekly', windows['7d']);
-            if (html) container.innerHTML = html;
+            if (html) setSafeHTML(container, html);
             const session = windows['5h'];
             if (session) this._updateGearBadge(Math.round((session.utilization || 0) * 100));
         },
@@ -1884,14 +2518,15 @@
         _renderFeatures(settings) {
             const container = $(`#${PREFIX}-features-content`);
             if (!container) return;
-            container.innerHTML = this.FEATURES.map(f => {
+            setSafeHTML(container, this.FEATURES.map(f => {
                 const on = settings[f.key] === true;
-                return `<div class="${PREFIX}-feat-row">
+                const tip = f.tip || f.desc || '';
+                return `<div class="${PREFIX}-feat-row" title="${esc(tip)}">
                         <span class="${PREFIX}-feat-name">${f.name}</span>
                         <button class="${PREFIX}-feat-btn ${on ? 'on' : 'off'}"
                                 data-feat="${f.key}" data-exclusive="${f.exclusive || ''}">${on ? 'ON' : 'OFF'}</button>
                     </div>`;
-            }).join('');
+            }).join(''));
             container.querySelectorAll(`.${PREFIX}-feat-btn`).forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const key = btn.dataset.feat;
@@ -1920,27 +2555,62 @@
             });
         },
 
+        _activePromptCat: 'all',
+
+        _renderPromptTabs() {
+            const tabs = $(`#${PREFIX}-prompt-tabs`);
+            if (!tabs) return;
+            tabs.textContent = '';
+            const allTab = document.createElement('button');
+            allTab.className = `${PREFIX}-ptab${this._activePromptCat === 'all' ? ' active' : ''}`;
+            allTab.textContent = 'All';
+            allTab.addEventListener('click', () => { this._activePromptCat = 'all'; this._renderPromptTabs(); this._renderPrompts(); });
+            tabs.appendChild(allTab);
+            PromptModule.categories.forEach(cat => {
+                const count = PromptModule.prompts.filter(p => p.cat === cat.id && p.prompt).length;
+                if (count === 0) return;
+                const tab = document.createElement('button');
+                tab.className = `${PREFIX}-ptab${this._activePromptCat === cat.id ? ' active' : ''}`;
+                tab.textContent = cat.label;
+                tab.style.setProperty('--tab-color', cat.color);
+                tab.addEventListener('click', () => { this._activePromptCat = cat.id; this._renderPromptTabs(); this._renderPrompts(); });
+                tabs.appendChild(tab);
+            });
+        },
+
         _renderPrompts() {
             const container = $(`#${PREFIX}-prompt-list`);
             if (!container) return;
-            container.innerHTML = '';
-            PromptModule.CATEGORIES.forEach(cat => {
-                const prompts = PromptModule.prompts.filter(p => p.cat === cat.id && p.prompt);
-                if (prompts.length === 0) return;
-                const catEl = document.createElement('div');
-                catEl.className = PREFIX + '-prompt-cat';
-                catEl.style.color = cat.color;
-                catEl.textContent = cat.label;
-                container.appendChild(catEl);
-                prompts.forEach(p => {
-                    const btn = document.createElement('button');
-                    btn.className = PREFIX + '-prompt-btn';
-                    btn.innerHTML = `<span>${esc(p.label)}</span>`;
-                    btn.title = p.prompt.substring(0, 100) + '...';
-                    btn.addEventListener('click', () => { PromptModule.send(p.prompt); this.toggle(); });
-                    btn.addEventListener('contextmenu', (e) => { e.preventDefault(); this._showPromptEditor(p); });
-                    container.appendChild(btn);
-                });
+            container.textContent = '';
+            this._renderPromptTabs();
+            const filtered = this._activePromptCat === 'all'
+                ? PromptModule.prompts.filter(p => p.prompt)
+                : PromptModule.prompts.filter(p => p.cat === this._activePromptCat && p.prompt);
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'color:#555;font-size:10px;text-align:center;padding:12px 0';
+                empty.textContent = 'No prompts in this category';
+                container.appendChild(empty);
+                return;
+            }
+            filtered.forEach(p => {
+                const cat = PromptModule.categories.find(c => c.id === p.cat);
+                const row = document.createElement('div');
+                row.className = `${PREFIX}-prompt-row`;
+                const btn = document.createElement('button');
+                btn.className = `${PREFIX}-prompt-btn`;
+                btn.title = p.prompt.substring(0, 150);
+                const dot = cat ? `<span style="color:${cat.color};margin-right:3px">&#9679;</span>` : '';
+                setSafeHTML(btn, `${dot}<span>${esc(p.label)}</span>`);
+                btn.addEventListener('click', () => { PromptModule.send(p.prompt); this.toggle(); });
+                const editBtn = document.createElement('button');
+                editBtn.className = `${PREFIX}-prompt-edit-btn`;
+                editBtn.textContent = '\u270E';
+                editBtn.title = 'Edit prompt';
+                editBtn.addEventListener('click', (e) => { e.stopPropagation(); this._showPromptEditor(p); });
+                row.appendChild(btn);
+                row.appendChild(editBtn);
+                container.appendChild(row);
             });
         },
 
@@ -1949,21 +2619,21 @@
             overlay.className = PREFIX + '-modal-overlay';
             const modal = document.createElement('div');
             modal.className = PREFIX + '-modal';
-            modal.innerHTML = `
-                <h3>${existing ? 'Edit' : 'Add'} Prompt</h3>
+            setSafeHTML(modal, `
+                <h3>${existing ? 'Edit' : 'New'} Prompt</h3>
                 <input id="${PREFIX}-pe-label" placeholder="Button label" value="${existing ? esc(existing.label) : ''}">
-                <textarea id="${PREFIX}-pe-text" placeholder="Prompt template...">${existing ? esc(existing.prompt) : ''}</textarea>
+                <textarea id="${PREFIX}-pe-text" placeholder="Prompt text...">${existing ? esc(existing.prompt) : ''}</textarea>
                 <div style="margin-top:10px">
-                    <select class="${PREFIX}-select" id="${PREFIX}-pe-cat">
-                        ${PromptModule.CATEGORIES.map(c => `<option value="${c.id}" ${existing?.cat === c.id ? 'selected' : ''}>${c.label}</option>`).join('')}
+                    <select class="${PREFIX}-select" id="${PREFIX}-pe-cat" style="width:100%">
+                        ${PromptModule.categories.map(c => `<option value="${c.id}" ${existing?.cat === c.id ? 'selected' : ''}>${c.label}</option>`).join('')}
                     </select>
                 </div>
                 <div class="${PREFIX}-modal-actions">
-                    ${existing && !existing.id.startsWith('spec') && !existing.id.startsWith('arch') ? `<button class="${PREFIX}-modal-btn danger" id="${PREFIX}-pe-delete">Delete</button>` : ''}
+                    ${existing ? `<button class="${PREFIX}-modal-btn danger" id="${PREFIX}-pe-delete">Delete</button>` : ''}
                     <button class="${PREFIX}-modal-btn secondary" id="${PREFIX}-pe-cancel">Cancel</button>
                     <button class="${PREFIX}-modal-btn primary" id="${PREFIX}-pe-save">Save</button>
                 </div>
-            `;
+            `);
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
             overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
@@ -1988,6 +2658,260 @@
             });
         },
 
+        _showPromptManager() {
+            const overlay = document.createElement('div');
+            overlay.className = PREFIX + '-modal-overlay';
+            const mgr = document.createElement('div');
+            mgr.className = `${PREFIX}-modal ${PREFIX}-prompt-mgr`;
+
+            const renderManager = () => {
+                const activeCat = mgr._filterCat || 'all';
+                const search = (mgr._search || '').toLowerCase();
+                let prompts = activeCat === 'all'
+                    ? [...PromptModule.prompts]
+                    : PromptModule.prompts.filter(p => p.cat === activeCat);
+                if (search) prompts = prompts.filter(p =>
+                    p.label.toLowerCase().includes(search) || p.prompt.toLowerCase().includes(search)
+                );
+
+                let html = `<div class="${PREFIX}-mgr-header">
+                    <h3 style="margin:0;font-size:15px;color:#e8e8f0">Prompt Manager</h3>
+                    <button class="${PREFIX}-close" id="${PREFIX}-mgr-close">&times;</button>
+                </div>
+                <div class="${PREFIX}-mgr-toolbar">
+                    <div class="${PREFIX}-mgr-tabs">
+                        <button class="${PREFIX}-ptab${activeCat === 'all' ? ' active' : ''}" data-mgr-cat="all">All (${PromptModule.prompts.length})</button>
+                        ${PromptModule.categories.map(c => {
+                            const cnt = PromptModule.prompts.filter(p => p.cat === c.id).length;
+                            return `<button class="${PREFIX}-ptab${activeCat === c.id ? ' active' : ''}" data-mgr-cat="${c.id}" style="--tab-color:${c.color}">${c.label} (${cnt})</button>`;
+                        }).join('')}
+                    </div>
+                    <input type="text" class="${PREFIX}-mgr-search" id="${PREFIX}-mgr-search" placeholder="Search prompts..." value="${esc(mgr._search || '')}">
+                </div>
+                <div class="${PREFIX}-mgr-list">`;
+
+                if (prompts.length === 0) {
+                    html += `<div style="text-align:center;color:#555;padding:24px">No prompts found</div>`;
+                } else {
+                    prompts.forEach((p, i) => {
+                        const cat = PromptModule.categories.find(c => c.id === p.cat);
+                        const catColor = cat ? cat.color : '#888';
+                        const catLabel = cat ? cat.label : p.cat;
+                        const preview = p.prompt ? p.prompt.substring(0, 120).replace(/\n/g, ' ') : '(empty)';
+                        // Find real index in full prompts array for reorder
+                        const realIdx = PromptModule.prompts.indexOf(p);
+                        const isFirst = realIdx === 0;
+                        const isLast = realIdx === PromptModule.prompts.length - 1;
+                        html += `<div class="${PREFIX}-mgr-item" data-mgr-idx="${i}">
+                            <div class="${PREFIX}-mgr-item-head">
+                                <span class="${PREFIX}-mgr-item-dot" style="background:${catColor}"></span>
+                                <span class="${PREFIX}-mgr-item-label">${esc(p.label)}</span>
+                                <span class="${PREFIX}-mgr-item-cat">${esc(catLabel)}</span>
+                                <div class="${PREFIX}-mgr-item-actions">
+                                    <button class="${PREFIX}-mgr-act move" data-mgr-id="${esc(p.id)}" data-dir="up" title="Move up"${isFirst ? ' disabled style="opacity:0.2;pointer-events:none"' : ''}>\u25B2</button>
+                                    <button class="${PREFIX}-mgr-act move" data-mgr-id="${esc(p.id)}" data-dir="down" title="Move down"${isLast ? ' disabled style="opacity:0.2;pointer-events:none"' : ''}>\u25BC</button>
+                                    <button class="${PREFIX}-mgr-act edit" data-mgr-id="${esc(p.id)}" title="Edit">\u270E</button>
+                                    <button class="${PREFIX}-mgr-act del" data-mgr-id="${esc(p.id)}" title="Delete">&times;</button>
+                                </div>
+                            </div>
+                            <div class="${PREFIX}-mgr-item-preview">${esc(preview)}</div>
+                        </div>`;
+                    });
+                }
+
+                html += `</div>
+                <div class="${PREFIX}-mgr-footer">
+                    <button class="${PREFIX}-modal-btn primary" id="${PREFIX}-mgr-add">+ New Prompt</button>
+                    <button class="${PREFIX}-modal-btn secondary" id="${PREFIX}-mgr-groups" title="Edit group names, colors, and create new groups">Groups</button>
+                    <button class="${PREFIX}-modal-btn secondary" id="${PREFIX}-mgr-export" title="Download all prompts as a JSON file for backup or sharing">Export</button>
+                    <button class="${PREFIX}-modal-btn secondary" id="${PREFIX}-mgr-import" title="Import prompts from a previously exported JSON file">Import</button>
+                    <button class="${PREFIX}-modal-btn secondary" id="${PREFIX}-mgr-restore">Restore Defaults</button>
+                </div>`;
+
+                if (mgr._showGroups) {
+                    // Insert groups editor before footer
+                    const groupsHTML = `<div class="${PREFIX}-cat-editor" id="${PREFIX}-cat-editor">
+                        <div style="font-size:10px;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px">Groups</div>
+                        ${PromptModule.categories.map((c, i) => {
+                            const cnt = PromptModule.prompts.filter(p => p.cat === c.id).length;
+                            return `<div class="${PREFIX}-cat-row" data-cat-idx="${i}">
+                                <input type="color" value="${c.color}" data-cat-color="${c.id}" title="Change color">
+                                <input type="text" value="${esc(c.label)}" data-cat-rename="${c.id}" title="Rename group">
+                                <span class="${PREFIX}-cat-count">${cnt}</span>
+                                <button class="${PREFIX}-cat-del" data-cat-del="${c.id}" title="Delete group${cnt ? ' (' + cnt + ' prompts will move)' : ''}">&times;</button>
+                            </div>`;
+                        }).join('')}
+                        <div class="${PREFIX}-cat-add-row">
+                            <button id="${PREFIX}-cat-add-btn">+ Add Group</button>
+                        </div>
+                    </div>`;
+                    html = html.replace(`<div class="${PREFIX}-mgr-footer">`, groupsHTML + `<div class="${PREFIX}-mgr-footer">`);
+                }
+
+                setSafeHTML(mgr, html);
+
+                // Bind events inside manager
+                $(`#${PREFIX}-mgr-close`, mgr).addEventListener('click', () => overlay.remove());
+                $(`#${PREFIX}-mgr-search`, mgr).addEventListener('input', (e) => { mgr._search = e.target.value; renderManager(); });
+                mgr.querySelectorAll(`[data-mgr-cat]`).forEach(tab => {
+                    tab.addEventListener('click', () => { mgr._filterCat = tab.dataset.mgrCat; renderManager(); });
+                });
+                mgr.querySelectorAll(`.${PREFIX}-mgr-act.edit`).forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const p = PromptModule.prompts.find(x => x.id === btn.dataset.mgrId);
+                        if (p) { overlay.remove(); this._showPromptEditor(p); }
+                    });
+                });
+                mgr.querySelectorAll(`.${PREFIX}-mgr-act.del`).forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        PromptModule.remove(btn.dataset.mgrId);
+                        this._renderPrompts();
+                        renderManager();
+                        showToast('Prompt deleted', 1500, 'info');
+                    });
+                });
+                // #12: Reorder buttons
+                mgr.querySelectorAll(`.${PREFIX}-mgr-act.move`).forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.dataset.mgrId;
+                        const dir = btn.dataset.dir;
+                        const arr = PromptModule.prompts;
+                        const idx = arr.findIndex(p => p.id === id);
+                        if (idx < 0) return;
+                        const swap = dir === 'up' ? idx - 1 : idx + 1;
+                        if (swap < 0 || swap >= arr.length) return;
+                        [arr[idx], arr[swap]] = [arr[swap], arr[idx]];
+                        PromptModule.save();
+                        this._renderPrompts();
+                        renderManager();
+                    });
+                });
+                const addBtn = $(`#${PREFIX}-mgr-add`, mgr);
+                if (addBtn) addBtn.addEventListener('click', () => { overlay.remove(); this._showPromptEditor(); });
+                // Groups toggle
+                const groupsBtn = $(`#${PREFIX}-mgr-groups`, mgr);
+                if (groupsBtn) groupsBtn.addEventListener('click', () => { mgr._showGroups = !mgr._showGroups; renderManager(); });
+                // Category editor bindings
+                mgr.querySelectorAll(`[data-cat-rename]`).forEach(input => {
+                    const debounce = () => {
+                        const val = input.value.trim();
+                        if (val) { PromptModule.renameCategory(input.dataset.catRename, val); this._renderPrompts(); }
+                    };
+                    input.addEventListener('change', debounce);
+                    input.addEventListener('blur', debounce);
+                });
+                mgr.querySelectorAll(`[data-cat-color]`).forEach(input => {
+                    input.addEventListener('input', () => {
+                        PromptModule.setCategoryColor(input.dataset.catColor, input.value);
+                        this._renderPrompts();
+                        renderManager();
+                    });
+                });
+                mgr.querySelectorAll(`[data-cat-del]`).forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (PromptModule.categories.length <= 1) { showToast('Need at least one group', 2000, 'warn'); return; }
+                        PromptModule.removeCategory(btn.dataset.catDel);
+                        this._renderPrompts();
+                        renderManager();
+                        showToast('Group deleted', 1500, 'info');
+                    });
+                });
+                const catAddBtn = $(`#${PREFIX}-cat-add-btn`, mgr);
+                if (catAddBtn) catAddBtn.addEventListener('click', () => {
+                    const colors = ['#ff6b6b','#ffa94d','#ffd43b','#69db7c','#38d9a9','#4dabf7','#748ffc','#da77f2','#f783ac'];
+                    const color = colors[PromptModule.categories.length % colors.length];
+                    PromptModule.addCategory('New Group', color);
+                    this._renderPrompts();
+                    renderManager();
+                    // Auto-focus the new group's name input
+                    setTimeout(() => {
+                        const inputs = mgr.querySelectorAll(`[data-cat-rename]`);
+                        const last = inputs[inputs.length - 1];
+                        if (last) { last.focus(); last.select(); }
+                    }, 50);
+                });
+                // #9: Export prompts as JSON
+                const exportBtn = $(`#${PREFIX}-mgr-export`, mgr);
+                if (exportBtn) exportBtn.addEventListener('click', () => {
+                    const data = JSON.stringify({
+                        categories: PromptModule.categories,
+                        prompts: PromptModule.prompts.map(p => ({ id: p.id, label: p.label, prompt: p.prompt, cat: p.cat }))
+                    }, null, 2);
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = `cue_prompts_${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    URL.revokeObjectURL(url);
+                    showToast(`Exported ${PromptModule.prompts.length} prompts + ${PromptModule.categories.length} groups`, 2000, 'success');
+                });
+                // #9: Import prompts from JSON file
+                const importBtn = $(`#${PREFIX}-mgr-import`, mgr);
+                if (importBtn) importBtn.addEventListener('click', () => {
+                    const input = document.createElement('input');
+                    input.type = 'file'; input.accept = '.json';
+                    input.addEventListener('change', () => {
+                        const file = input.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            try {
+                                const raw = JSON.parse(reader.result);
+                                // Support both formats: {categories, prompts} or plain array
+                                const imported = Array.isArray(raw) ? raw : (raw.prompts || []);
+                                const importedCats = raw.categories || [];
+                                // Import categories first
+                                let catsAdded = 0;
+                                for (const c of importedCats) {
+                                    if (!c.id || !c.label) continue;
+                                    if (!PromptModule.categories.find(x => x.id === c.id)) {
+                                        PromptModule.categories.push({ id: c.id, label: c.label, color: c.color || '#888' });
+                                        catsAdded++;
+                                    }
+                                }
+                                if (catsAdded) PromptModule.saveCategories();
+                                // Import prompts
+                                let added = 0;
+                                for (const p of imported) {
+                                    if (!p.label || typeof p.prompt !== 'string') continue;
+                                    if (p.id && PromptModule.prompts.find(x => x.id === p.id)) continue;
+                                    let cat = p.cat;
+                                    if (!cat || !PromptModule.categories.find(c => c.id === cat)) {
+                                        if (p.cat && typeof p.cat === 'string') { PromptModule.addCategory(p.cat); cat = PromptModule.categories[PromptModule.categories.length - 1].id; }
+                                        else cat = PromptModule.categories[0]?.id || 'writing';
+                                    }
+                                    PromptModule.add(p.label, p.prompt, cat);
+                                    added++;
+                                }
+                                this._renderPrompts();
+                                renderManager();
+                                showToast(`Imported ${added} prompts${catsAdded ? ', ' + catsAdded + ' groups' : ''} (${imported.length - added} skipped)`, 3000, 'success');
+                            } catch (e) {
+                                showToast('Invalid prompts file: ' + e.message, 3000, 'error');
+                            }
+                        };
+                        reader.readAsText(file);
+                    });
+                    input.click();
+                });
+                const restoreBtn = $(`#${PREFIX}-mgr-restore`, mgr);
+                if (restoreBtn) restoreBtn.addEventListener('click', () => {
+                    PromptModule.prompts = PromptModule.DEFAULT_PROMPTS.map(d => ({ ...d }));
+                    PromptModule.categories = PromptModule.DEFAULT_CATEGORIES.map(c => ({ ...c }));
+                    PromptModule.save();
+                    PromptModule.saveCategories();
+                    this._renderPrompts();
+                    renderManager();
+                    showToast('Defaults restored (prompts + groups)', 2000, 'success');
+                });
+            };
+
+            overlay.appendChild(mgr);
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            renderManager();
+        },
+
         _updateStatus(status) {
             const el = $(`#${PREFIX}-status`);
             if (!el) return;
@@ -1999,7 +2923,7 @@
                 truncated: ['truncated', 'Truncated']
             };
             const [cls, txt] = labels[status] || labels.idle;
-            el.innerHTML = `<span class="${PREFIX}-status-dot ${cls}"></span>${txt}`;
+            setSafeHTML(el, `<span class="${PREFIX}-status-dot ${cls}"></span>${txt}`);
         },
 
         _updateLastResponse(d) {
@@ -2008,11 +2932,12 @@
         },
 
         _updateGearBadge(pct) {
-            // Update hover strip indicator color based on usage
             const strip = $(`#${PREFIX}-hover-strip`);
             if (!strip) return;
             const color = pct > 80 ? 'rgba(248,81,73,0.6)' : pct > 60 ? 'rgba(210,153,34,0.5)' : 'rgba(88,166,255,0.2)';
+            const hover = pct > 80 ? 'rgba(248,81,73,0.8)' : pct > 60 ? 'rgba(210,153,34,0.7)' : 'rgba(88,166,255,0.5)';
             strip.style.setProperty('--strip-color', color);
+            strip.style.setProperty('--strip-hover', hover);
         },
 
         _fmtReset(iso) {
@@ -2037,6 +2962,7 @@
 
             let hideTimeout = null;
             const showPanel = () => {
+                if (this._locked) return; // locked panel is always visible
                 clearTimeout(hideTimeout);
                 if (this._panel && this._panel.classList.contains(PREFIX + '-panel-hidden')) {
                     this._panel.classList.remove(PREFIX + '-panel-hidden');
@@ -2045,8 +2971,10 @@
                 }
             };
             const scheduleHide = () => {
+                if (this._locked || this._resizing) return; // never auto-hide when locked or resizing
                 clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
+                    if (this._locked || this._resizing) return;
                     if (this._panel && !this._panel.matches(':hover') && !strip.matches(':hover')) {
                         this._panel.classList.add(PREFIX + '-panel-hidden');
                         this._visible = false;
@@ -2057,23 +2985,20 @@
             strip.addEventListener('mouseenter', showPanel);
             strip.addEventListener('mouseleave', scheduleHide);
             if (this._panel) {
-                this._panel.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+                this._panel.addEventListener('mouseenter', () => { if (!this._locked) clearTimeout(hideTimeout); });
                 this._panel.addEventListener('mouseleave', scheduleHide);
             }
         },
 
-        destroy() { clearInterval(this._refreshTimer); }
+        destroy() {
+            clearInterval(this._refreshTimer);
+            document.body.classList.remove(PREFIX + '-panel-locked');
+        }
     };
 
     // =====================================================================
     //  INITIALIZATION
     // =====================================================================
-    const ALL_MODULES = [
-        ThemeModule, LayoutModule, VisualModule, PasteFixModule,
-        AutoScrollModule, AutoApproveModule, ExportModule,
-        ResponseModule, DomTrimmerModule, PromptModule, ShortcutsModule
-    ];
-
     async function init() {
         console.log(`%c${LOG_TAG} Claude Ultimate Enhancer v${VERSION} initializing...`, 'color:#58a6ff;font-weight:bold;font-size:14px');
 
@@ -2084,11 +3009,6 @@
         ThemeModule.init();
         LayoutModule.init();
         PasteFixModule.init();
-
-        // DevTools shortcut fix
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'I') e.stopImmediatePropagation();
-        }, true);
 
         // Wait for body to be available
         const waitBody = () => new Promise(r => {
@@ -2106,7 +3026,7 @@
         ResponseModule.init();
         DomTrimmerModule.init();
         PromptModule.init();
-        ShortcutsModule.init();
+        AutoBuildModule.init();
 
         // Build control panel
         ControlPanel.build();
@@ -2119,6 +3039,8 @@
                 lastUrl = location.href;
                 ResponseModule.status = 'idle';
                 ResponseModule.genStartTime = null;
+                ResponseModule._streamActive = false;
+                ResponseModule._pollFallbackCount = 0;
                 ResponseModule.lastDuration = 0;
                 ResponseModule.lastWords = 0;
                 ResponseModule.lastChars = 0;
@@ -2128,7 +3050,7 @@
             }
         }, 2000);
 
-        console.log(`%c${LOG_TAG} Ready! Hover right edge or press Ctrl+Shift+D`, 'color:#3fb950;font-weight:bold');
+        console.log(`%c${LOG_TAG} Ready! Hover right edge to open panel`, 'color:#3fb950;font-weight:bold');
     }
 
     // Start
