@@ -17,7 +17,7 @@
       7. Optionally blocks domains via hosts file
 
 .NOTES
-    Author  : Matt (Maven Imaging)
+    Author  : SysAdminDoc
     Version : 1.0
     Date    : 2026-02-02
 #>

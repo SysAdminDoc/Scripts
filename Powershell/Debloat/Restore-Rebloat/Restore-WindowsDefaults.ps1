@@ -12,7 +12,7 @@
     Run with Administrator privileges. Creates a detailed log on your Desktop.
 
 .NOTES
-    Author: Maven Imaging IT
+    Author: SysAdminDoc
     Version: 4.2.0
     Requires: Administrator privileges
 #>
